@@ -2,6 +2,9 @@ import { useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
 import { api } from '../lib/api'
+import { Fence } from 'lucide-react'
+import EmptyState from '../components/ui/EmptyState'
+import { SkeletonTable } from '../components/ui/Skeleton'
 
 function OcupacaoBar({ atual, capacidade }) {
   if (!capacidade) return null
@@ -110,7 +113,7 @@ function OcupacaoCell({ qtd, capacidade }) {
 
 function DesktopLotes() {
   const navigate = useNavigate()
-  const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const { data: lotes, loading } = useApi(() => api.lotes.listar(), [])
   const totalAnimais = (lotes || []).reduce((s, l) => s + (l.qtd_animais || 0), 0)
 
   return (
@@ -129,13 +132,17 @@ function DesktopLotes() {
       </div>
 
       <div className="flex-1 overflow-auto p-[22px_26px] bg-header-bg">
+        {loading && <SkeletonTable rows={5} cols={5} />}
+        {!loading && (lotes || []).length === 0 && (
+          <div className="bg-white border border-border rounded-[14px] overflow-hidden">
+            <EmptyState icon={Fence} title="Nenhum lote cadastrado" description="Crie lotes e pastos para organizar seus animais." actionLabel="Criar lote" onAction={() => navigate('/lotes/novo')} />
+          </div>
+        )}
+        {!loading && (lotes || []).length > 0 && (
         <div className="bg-white border border-border rounded-[14px] overflow-hidden">
           <div className="grid grid-cols-[1.2fr_.8fr_.6fr_1.4fr_.8fr] px-[18px] py-[13px] text-[12px] font-bold text-text-secondary uppercase tracking-[.04em] border-b border-[#eee9df]">
             <span>Nome</span><span>Tipo</span><span>Animais</span><span>Ocupação</span><span>Peso médio</span>
           </div>
-          {(lotes || []).length === 0 && (
-            <div className="text-center text-text-secondary py-[40px] text-[14px]">Nenhum lote cadastrado.</div>
-          )}
           {(lotes || []).map(lote => {
             const qtd = lote.qtd_animais || 0
             const pesoMedio = lote.peso_medio ? `${parseFloat(lote.peso_medio).toFixed(0)} kg` : '—'
@@ -155,6 +162,7 @@ function DesktopLotes() {
             )
           })}
         </div>
+        )}
       </div>
     </>
   )

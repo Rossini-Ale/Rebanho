@@ -5,7 +5,9 @@ import KPITile from '../components/ui/KPITile'
 import Button from '../components/ui/Button'
 import { api } from '../lib/api'
 import { fmtDataCurta } from '../lib/utils'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Heart } from 'lucide-react'
+import EmptyState from '../components/ui/EmptyState'
+import { SkeletonTable } from '../components/ui/Skeleton'
 
 const statusStyle = {
   aguardando: { label: 'Aguardando', color: '#7c8378', bg: '#eceadf' },
@@ -69,7 +71,7 @@ function MobileReproducao() {
 
 function DesktopReproducao() {
   const navigate = useNavigate()
-  const { data: coberturas } = useApi(() => api.reproducao.listar(), [])
+  const { data: coberturas, loading } = useApi(() => api.reproducao.listar(), [])
   const { data: stats } = useApi(() => api.reproducao.stats(), [])
   const lista = coberturas || []
   const st = stats || {}
@@ -94,6 +96,13 @@ function DesktopReproducao() {
           <KPITile label="Partos < 30d" value={String(st.partos_30d || 0)} subtitle={`${st.partos_semana || 0} esta semana`} />
           <KPITile label="Nascimentos ano" value={String(st.nascimentos_ano || 0)} subtitle={st.diff_nascimentos != null ? `${st.diff_nascimentos >= 0 ? '+' : ''}${st.diff_nascimentos} vs ano ant.` : ''} variant="primary" />
         </div>
+        {loading && <SkeletonTable rows={5} cols={4} />}
+        {!loading && lista.length === 0 && (
+          <div className="bg-white border border-border rounded-[14px] overflow-hidden">
+            <EmptyState icon={Heart} title="Nenhuma cobertura registrada" description="Registre coberturas para acompanhar prenhez e partos do rebanho." actionLabel="Nova cobertura" onAction={() => navigate('/reproducao/cobertura')} />
+          </div>
+        )}
+        {!loading && lista.length > 0 && (
         <div className="grid grid-cols-2 gap-[14px]">
           <div className="bg-white border border-border rounded-[14px] p-[18px]">
             <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Próximos partos</div>
@@ -119,6 +128,7 @@ function DesktopReproducao() {
             {ativas.length === 0 && <div className="py-[12px] text-center text-text-secondary text-[14px]">Nenhuma cobertura ativa.</div>}
           </div>
         </div>
+        )}
       </div>
     </>
   )

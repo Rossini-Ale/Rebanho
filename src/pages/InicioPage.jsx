@@ -6,6 +6,7 @@ import KPITile from '../components/ui/KPITile'
 import { api } from '../lib/api'
 import { fmtMoeda } from '../lib/utils'
 import { Search } from 'lucide-react'
+import { SkeletonKPI } from '../components/ui/Skeleton'
 
 function MobileInicio() {
   const navigate = useNavigate()
@@ -75,10 +76,29 @@ function DesktopInicio() {
 
       <div className="flex-1 overflow-auto p-[20px_26px]">
         <div className="grid grid-cols-4 gap-[14px] mb-[18px]">
-          <KPITile label="Total de animais" value={String(s.total_animais || 0)} subtitle={`${s.ativos || 0} ativos`} />
-          <KPITile label="Peso médio" value={<>{s.peso_medio || 0}<span className="text-[15px]"> kg</span></>} />
-          <KPITile label="Prenhez confirmada" value={String(s.prenhes || 0)} />
-          <KPITile label="Resultado do mês" value={s.resultado_mes != null ? `${s.resultado_mes >= 0 ? '+' : ''}${fmtMoeda(s.resultado_mes)}` : '—'} subtitle="venda − custo" variant="primary" />
+          {!stats ? (
+            <>
+              <SkeletonKPI />
+              <SkeletonKPI />
+              <SkeletonKPI />
+              <SkeletonKPI />
+            </>
+          ) : (
+            <>
+              <div onClick={() => navigate('/animais')} className="cursor-pointer hover:scale-[1.02] transition-transform">
+                <KPITile label="Total de animais" value={String(s.total_animais || 0)} subtitle={`${s.ativos || 0} ativos`} />
+              </div>
+              <div onClick={() => navigate('/animais')} className="cursor-pointer hover:scale-[1.02] transition-transform">
+                <KPITile label="Peso médio" value={<>{s.peso_medio || 0}<span className="text-[15px]"> kg</span></>} />
+              </div>
+              <div onClick={() => navigate('/reproducao')} className="cursor-pointer hover:scale-[1.02] transition-transform">
+                <KPITile label="Prenhez confirmada" value={String(s.prenhes || 0)} />
+              </div>
+              <div onClick={() => navigate('/financeiro')} className="cursor-pointer hover:scale-[1.02] transition-transform">
+                <KPITile label="Resultado do mês" value={s.resultado_mes != null ? `${s.resultado_mes >= 0 ? '+' : ''}${fmtMoeda(s.resultado_mes)}` : '—'} subtitle="venda − custo" variant="primary" />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-[1.6fr_1fr] gap-[14px]">

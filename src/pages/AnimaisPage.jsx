@@ -5,7 +5,9 @@ import useApi from '../hooks/useApi'
 import Chip from '../components/ui/Chip'
 import { api } from '../lib/api'
 import { calcularIdade } from '../lib/utils'
-import { Search } from 'lucide-react'
+import { Search, Beef, Scale, ArrowRightLeft } from 'lucide-react'
+import EmptyState from '../components/ui/EmptyState'
+import { SkeletonTable } from '../components/ui/Skeleton'
 
 const situacaoStyle = {
   ativo: { color: '#588157', bg: '#e7ece4' },
@@ -176,55 +178,69 @@ function DesktopAnimais() {
       </div>
 
       <div className="flex-1 overflow-auto px-[26px] pb-[20px] bg-header-bg">
-        {loading && <div className="text-center text-text-secondary py-[20px]">Carregando…</div>}
-        <div className="bg-white border border-border rounded-[14px] overflow-hidden">
-          <div className="grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[13px] text-[12px] font-bold text-text-secondary uppercase tracking-[.04em] border-b border-[#eee9df]">
-            <span>Brinco</span><span>Raça</span><span>Sexo</span><span>Idade</span><span>Lote</span><span>Peso</span><span>Situação</span>
+        {loading && <SkeletonTable rows={8} cols={7} />}
+        {!loading && animais.length === 0 && (
+          <div className="bg-white border border-border rounded-[14px] overflow-hidden">
+            <EmptyState icon={Beef} title="Nenhum animal cadastrado" description="Comece cadastrando seu primeiro animal para acompanhar o rebanho." actionLabel="Cadastrar animal" onAction={() => navigate('/animais/novo')} />
           </div>
-          {paginados.map(a => (
-            <button
-              key={a.id}
-              onClick={() => navigate(`/animais/${a.id}`)}
-              className="grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[14px] text-[14px] items-center border-b border-[#f0ede4] last:border-b-0 cursor-pointer w-full text-left bg-transparent hover:bg-[#faf9f5] transition-colors"
-            >
-              <span className="font-mono font-bold text-primary-dark">{a.brinco}</span>
-              <span className="text-text-body font-medium">{a.raca}</span>
-              <span className="text-text-body">{a.sexo}</span>
-              <span className="text-text-body">{calcularIdade(a.nascimento)}</span>
-              <span className="text-text-body">{a.lote}</span>
-              <span className="font-mono font-semibold">{a.peso} kg</span>
-              <span><SituacaoBadge situacao={a.situacao} /></span>
-            </button>
-          ))}
-        </div>
-
-        {!loading && (
-          <div className="flex justify-between items-center pt-[14px] px-[4px] text-[13px] text-text-secondary font-semibold">
-            <span>Mostrando {Math.min((pagina - 1) * porPagina + 1, filtered.length)}–{Math.min(pagina * porPagina, filtered.length)} de {filtered.length}</span>
-            <div className="flex gap-[6px]">
-              <button
-                onClick={() => setPagina(p => Math.max(1, p - 1))}
-                disabled={pagina === 1}
-                className="bg-white border border-field-border rounded-[8px] py-[6px] px-[11px] cursor-pointer disabled:opacity-40"
-              >‹</button>
-              {Array.from({ length: totalPaginas }, (_, i) => (
+        )}
+        {!loading && animais.length > 0 && (
+          <>
+            <div className="bg-white border border-border rounded-[14px] overflow-hidden">
+              <div className="grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[13px] text-[12px] font-bold text-text-secondary uppercase tracking-[.04em] border-b border-[#eee9df]">
+                <span>Brinco</span><span>Raça</span><span>Sexo</span><span>Idade</span><span>Lote</span><span>Peso</span><span>Situação</span>
+              </div>
+              {paginados.map(a => (
                 <button
-                  key={i}
-                  onClick={() => setPagina(i + 1)}
-                  className={`rounded-[8px] py-[6px] px-[11px] cursor-pointer border ${
-                    pagina === i + 1
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white border-field-border'
-                  }`}
-                >{i + 1}</button>
+                  key={a.id}
+                  onClick={() => navigate(`/animais/${a.id}`)}
+                  className="group grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[14px] text-[14px] items-center border-b border-[#f0ede4] last:border-b-0 cursor-pointer w-full text-left bg-transparent hover:bg-[#f5f3ec] transition-colors relative"
+                >
+                  <span className="font-mono font-bold text-primary-dark">{a.brinco}</span>
+                  <span className="text-text-body font-medium">{a.raca}</span>
+                  <span className="text-text-body">{a.sexo}</span>
+                  <span className="text-text-body">{calcularIdade(a.nascimento)}</span>
+                  <span className="text-text-body">{a.lote}</span>
+                  <span className="font-mono font-semibold">{a.peso} kg</span>
+                  <span><SituacaoBadge situacao={a.situacao} /></span>
+                  <span className="absolute right-[18px] top-1/2 -translate-y-1/2 flex gap-[6px] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span onClick={(e) => { e.stopPropagation(); navigate(`/registrar-peso?animal=${a.id}`) }} className="w-[30px] h-[30px] rounded-[8px] bg-white border border-field-border flex items-center justify-center hover:bg-chip-bg transition-colors" title="Registrar peso">
+                      <Scale size={14} className="text-primary-dark" />
+                    </span>
+                    <span onClick={(e) => { e.stopPropagation(); navigate(`/mover-lote?animal=${a.id}`) }} className="w-[30px] h-[30px] rounded-[8px] bg-white border border-field-border flex items-center justify-center hover:bg-chip-bg transition-colors" title="Mover lote">
+                      <ArrowRightLeft size={14} className="text-primary-dark" />
+                    </span>
+                  </span>
+                </button>
               ))}
-              <button
-                onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
-                disabled={pagina === totalPaginas}
-                className="bg-white border border-field-border rounded-[8px] py-[6px] px-[11px] cursor-pointer disabled:opacity-40"
-              >›</button>
             </div>
-          </div>
+            <div className="flex justify-between items-center pt-[14px] px-[4px] text-[13px] text-text-secondary font-semibold">
+              <span>Mostrando {Math.min((pagina - 1) * porPagina + 1, filtered.length)}–{Math.min(pagina * porPagina, filtered.length)} de {filtered.length}</span>
+              <div className="flex gap-[6px]">
+                <button
+                  onClick={() => setPagina(p => Math.max(1, p - 1))}
+                  disabled={pagina === 1}
+                  className="bg-white border border-field-border rounded-[8px] py-[6px] px-[11px] cursor-pointer disabled:opacity-40"
+                >‹</button>
+                {Array.from({ length: totalPaginas }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPagina(i + 1)}
+                    className={`rounded-[8px] py-[6px] px-[11px] cursor-pointer border ${
+                      pagina === i + 1
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white border-field-border'
+                    }`}
+                  >{i + 1}</button>
+                ))}
+                <button
+                  onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                  disabled={pagina === totalPaginas}
+                  className="bg-white border border-field-border rounded-[8px] py-[6px] px-[11px] cursor-pointer disabled:opacity-40"
+                >›</button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </>

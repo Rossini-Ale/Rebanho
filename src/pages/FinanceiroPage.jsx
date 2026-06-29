@@ -4,7 +4,9 @@ import useApi from '../hooks/useApi'
 import KPITile from '../components/ui/KPITile'
 import { api } from '../lib/api'
 import { fmtMoeda, fmtDataCurta } from '../lib/utils'
-import { ChevronLeft, Download } from 'lucide-react'
+import { ChevronLeft, Download, Wallet } from 'lucide-react'
+import EmptyState from '../components/ui/EmptyState'
+import { SkeletonTable } from '../components/ui/Skeleton'
 
 const mesesAbrev = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
@@ -77,7 +79,7 @@ function MobileFinanceiro() {
 
 function DesktopFinanceiro() {
   const navigate = useNavigate()
-  const { data: lancamentos } = useApi(() => api.financeiro.listar(), [])
+  const { data: lancamentos, loading } = useApi(() => api.financeiro.listar(), [])
   const { data: resumo } = useApi(() => api.financeiro.resumo(), [])
   const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
   const lista = lancamentos || []
@@ -199,8 +201,9 @@ function DesktopFinanceiro() {
               </div>
             )
           })}
-          {lista.length === 0 && (
-            <div className="py-[24px] text-center text-text-secondary text-[14px] border-t border-[#f0ede4]">Nenhum lançamento registrado.</div>
+          {loading && !lista.length && <SkeletonTable rows={4} cols={4} />}
+          {!loading && lista.length === 0 && (
+            <EmptyState icon={Wallet} title="Nenhum lançamento" description="Registre receitas e despesas para acompanhar as finanças da fazenda." actionLabel="Novo lançamento" onAction={() => navigate('/financeiro/custo')} />
           )}
         </div>
       </div>

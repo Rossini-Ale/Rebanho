@@ -7,7 +7,8 @@ import Chip from '../components/ui/Chip'
 import Button from '../components/ui/Button'
 import { api } from '../lib/api'
 import { fmtDataCurta } from '../lib/utils'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ShieldCheck } from 'lucide-react'
+import EmptyState from '../components/ui/EmptyState'
 
 const urgenciaColors = { vencido: '#b54a2f', proximo: '#c9882a', agendado: '#588157' }
 
@@ -141,7 +142,7 @@ function DesktopSanidade() {
             </div>
           ))}
           {all.length === 0 && (
-            <div className="py-[24px] text-center text-text-secondary text-[14px] border-t border-[#f0ede4]">Nenhum evento sanitário registrado.</div>
+            <EmptyState icon={ShieldCheck} title="Nenhum evento sanitário" description="Registre vacinas, vermífugos e exames do seu rebanho." actionLabel="Novo evento" onAction={() => navigate('/sanidade/novo')} />
           )}
         </div>
       </div>
