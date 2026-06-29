@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
-  Bug as Cow,
+  Beef,
   Fence,
-  Syringe,
-  Baby,
-  DollarSign,
+  ShieldCheck,
+  Heart,
+  Wallet,
   BarChart3,
   LogOut,
   Settings,
@@ -17,11 +17,11 @@ import {
 
 const menuItems = [
   { to: '/', label: 'Visão geral', icon: LayoutDashboard },
-  { to: '/animais', label: 'Animais', icon: Cow },
+  { to: '/animais', label: 'Animais', icon: Beef },
   { to: '/lotes', label: 'Lotes & pastos', icon: Fence },
-  { to: '/sanidade', label: 'Sanidade', icon: Syringe },
-  { to: '/reproducao', label: 'Reprodução', icon: Baby },
-  { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
+  { to: '/sanidade', label: 'Sanidade', icon: ShieldCheck },
+  { to: '/reproducao', label: 'Reprodução', icon: Heart },
+  { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ]
 
