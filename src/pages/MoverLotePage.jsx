@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
+import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
 import Select from '../components/ui/Select'
 import Input from '../components/ui/Input'
@@ -68,26 +69,17 @@ export default function MoverLotePage() {
 
   if (isDesktop) {
     return (
-      <>
-        <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
-          <div><div className="text-[21px] font-extrabold text-primary-dark">Mover de lote</div></div>
-        </div>
-        <div className="flex-1 flex items-center justify-center bg-header-bg relative">
-          <div className="absolute inset-0 bg-[rgba(20,30,22,0.45)] flex items-center justify-center z-10">
-            <div className="w-[470px] max-h-[88%] bg-bg rounded-[16px] shadow-[0_30px_70px_rgba(0,0,0,0.32)] overflow-hidden flex flex-col">
-              <div className="flex justify-between items-center py-[17px] px-[22px] border-b border-border bg-white">
-                <span className="text-[17px] font-extrabold text-primary-dark">Mover de lote</span>
-                <button onClick={() => navigate(-1)} className="text-[18px] text-text-secondary font-semibold bg-transparent border-none cursor-pointer">✕</button>
-              </div>
-              <div className="flex-1 overflow-auto p-[20px_22px]">{content}</div>
-              <div className="py-[13px] px-[22px] border-t border-border bg-white flex gap-[10px] justify-end">
-                <Button variant="secondary" onClick={() => navigate(-1)}>Cancelar</Button>
-                <button disabled={salvando} onClick={handleSave} className="bg-primary text-white rounded-sidebar-item py-[10px] px-[20px] text-[14px] font-extrabold cursor-pointer border-none disabled:opacity-50">{salvando ? 'Movendo…' : 'Mover animal'}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </>
+      <Modal
+        title="Mover de lote"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => navigate(-1)}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={salvando}>{salvando ? 'Movendo…' : 'Mover animal'}</Button>
+          </>
+        }
+      >
+        {content}
+      </Modal>
     )
   }
 
