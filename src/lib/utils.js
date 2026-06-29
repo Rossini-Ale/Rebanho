@@ -41,6 +41,14 @@ export const categoriasCusto = [
   'Outros',
 ]
 
+export const categoriasReceita = [
+  'Venda de gado',
+  'Leite',
+  'Aluguel de pasto',
+  'Subsídio / incentivo',
+  'Outros',
+]
+
 export const produtosSanitarios = [
   'Aftosa – Bovis',
   'Brucelose – B19',
