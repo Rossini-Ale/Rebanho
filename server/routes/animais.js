@@ -63,7 +63,22 @@ router.get('/:id/historico', async (req, res) => {
      LEFT JOIN lotes ld ON m.lote_destino_id = ld.id
      WHERE m.animal_id = ? AND a.fazenda_id = ? ORDER BY m.data DESC LIMIT 10`, [id, req.fazendaId]
   )
-  const hist = [...pesagens, ...eventos, ...movs].sort((a, b) => b.data.localeCompare?.(a.data) || 0)
+  const [coberturas] = await pool.query(
+    `SELECT 'reproducao' as tipo, c.data_cobertura as data,
+       CONCAT(c.metodo, ' · ', COALESCE(c.touro_info, '')) as valor,
+       c.status as detalhe
+     FROM coberturas c INNER JOIN animais a ON c.femea_id = a.id
+     WHERE c.femea_id = ? AND a.fazenda_id = ? ORDER BY c.data_cobertura DESC LIMIT 10`, [id, req.fazendaId]
+  )
+  const [custos] = await pool.query(
+    `SELECT 'financeiro' as tipo, lf.data,
+       CONCAT('R$ ', ABS(lf.valor)) as valor,
+       COALESCE(lf.descricao, lf.categoria) as detalhe
+     FROM lancamentos_financeiros lf
+     WHERE lf.animal_id = ? AND lf.lancamento_pai_id IS NULL
+     ORDER BY lf.data DESC LIMIT 10`, [id]
+  )
+  const hist = [...pesagens, ...eventos, ...movs, ...coberturas, ...custos].sort((a, b) => b.data.localeCompare?.(a.data) || 0)
   res.json(hist)
 })
 

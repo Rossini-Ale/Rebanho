@@ -11,7 +11,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
 import { calcularIdade, fmtDataCurta, fmtMoeda, racas } from '../lib/utils'
-import { ChevronLeft, Scale, ArrowRightLeft, LogOut, Pencil } from 'lucide-react'
+import { ChevronLeft, Scale, ArrowRightLeft, LogOut, Pencil, ShieldCheck, Heart, Wallet, ArrowRight } from 'lucide-react'
 
 const statusStyle = {
   parto_proximo: { label: 'Parto próximo', color: '#a9711f', bg: '#f6eed9' },
@@ -86,6 +86,14 @@ function MobilePerfil({ animal, eventos }) {
   )
 }
 
+const tipoConfig = {
+  pesagem: { label: 'Pesagem', icon: Scale, color: '#3a5a40', bg: '#e7ece4' },
+  sanitario: { label: 'Sanidade', icon: ShieldCheck, color: '#588157', bg: '#e7ece4' },
+  lote: { label: 'Movimentação', icon: ArrowRight, color: '#a9711f', bg: '#f6eed9' },
+  reproducao: { label: 'Reprodução', icon: Heart, color: '#8b5cf6', bg: '#f0e7fb' },
+  financeiro: { label: 'Financeiro', icon: Wallet, color: '#b54a2f', bg: '#fde8e4' },
+}
+
 function TabHistorico({ eventos, pesagens }) {
   const pontos = (pesagens || []).slice(0, 6).reverse()
   const pesos = pontos.map(p => parseFloat(p.peso_kg))
@@ -129,15 +137,33 @@ function TabHistorico({ eventos, pesagens }) {
       )}
 
       <div className="bg-white border border-border rounded-[14px] p-[18px]">
-        <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Histórico recente</div>
-        {eventos.map((ev, i) => (
-          <div key={i} className={`flex justify-between items-center py-[12px] ${i < eventos.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
-            <div>
-              <div className="text-[14px] font-bold text-primary-dark">{ev.valor || ev.tipo}</div>
-              <div className="text-[12px] text-text-secondary">{ev.detalhe}</div>
-            </div>
-          </div>
-        ))}
+        <div className="text-[15px] font-extrabold text-primary-dark mb-[16px]">Timeline</div>
+        <div className="relative">
+          {eventos.length > 1 && (
+            <div className="absolute left-[17px] top-[28px] bottom-[28px] w-[2px] bg-[#eee9df]" />
+          )}
+          {eventos.map((ev, i) => {
+            const cfg = tipoConfig[ev.tipo] || tipoConfig.pesagem
+            const Icon = cfg.icon
+            return (
+              <div key={i} className="flex gap-[14px] items-start mb-[4px] last:mb-0">
+                <div className="relative z-10 shrink-0 w-[34px] h-[34px] rounded-full flex items-center justify-center" style={{ background: cfg.bg }}>
+                  <Icon size={16} color={cfg.color} />
+                </div>
+                <div className="flex-1 py-[6px]">
+                  <div className="flex justify-between items-baseline">
+                    <div>
+                      <span className="text-[13.5px] font-bold text-primary-dark">{ev.valor || ev.tipo}</span>
+                      <span className="text-[11.5px] font-bold ml-[8px] py-[2px] px-[7px] rounded-[10px]" style={{ color: cfg.color, background: cfg.bg }}>{cfg.label}</span>
+                    </div>
+                    <span className="text-[12px] font-mono text-text-secondary shrink-0">{fmtDataCurta(ev.data)}</span>
+                  </div>
+                  {ev.detalhe && <div className="text-[12.5px] text-text-secondary mt-[2px]">{ev.detalhe}</div>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
         {eventos.length === 0 && <div className="py-[12px] text-center text-text-secondary text-[14px]">Nenhum evento registrado.</div>}
       </div>
     </>
