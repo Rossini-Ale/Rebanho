@@ -5,7 +5,7 @@ import useApi from '../hooks/useApi'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import { api } from '../lib/api'
-import { categoriasCusto, produtosSanitarios, racas, touros } from '../lib/utils'
+import { categoriasCusto, categoriasReceita, produtosSanitarios, racas, touros } from '../lib/utils'
 import { ChevronLeft, Trash2, Plus, Copy, Check, Download } from 'lucide-react'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 
@@ -200,6 +200,58 @@ function TabTiposCusto() {
     <div className="bg-white border border-border rounded-[14px] p-[18px]">
       <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Tipos de custo</div>
       <div className="text-[12.5px] text-text-secondary font-medium mb-[14px]">Categorias disponíveis ao registrar custos no financeiro.</div>
+
+      <div className="flex gap-[8px] mb-[14px]">
+        <input
+          value={novo}
+          onChange={e => setNovo(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && adicionar()}
+          placeholder="Nova categoria..."
+          className="flex-1 bg-white border-[1.5px] border-field-border rounded-button py-[10px] px-[14px] text-[14px] font-semibold text-primary-dark outline-none focus:border-primary"
+        />
+        <Button onClick={adicionar} disabled={!novo.trim()}>Adicionar</Button>
+      </div>
+
+      {itens.map((item, i) => (
+        <div key={item} className={`flex justify-between items-center py-[11px] ${i < itens.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+          <span className="text-[14.5px] font-semibold text-primary-dark">{item}</span>
+          <button onClick={() => remover(item)} className="bg-transparent border-none cursor-pointer text-text-secondary hover:text-danger transition-colors p-[4px]">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TabTiposReceita() {
+  const [itens, setItens] = useState(categoriasReceita)
+  const [novo, setNovo] = useState('')
+
+  useEffect(() => {
+    api.configuracoes.buscar('categorias_receita')
+      .then(res => { if (res?.valor) setItens(res.valor) })
+      .catch(() => {})
+  }, [])
+
+  const persistir = (updated) => {
+    setItens(updated)
+    api.configuracoes.salvar('categorias_receita', updated).catch(() => {})
+  }
+
+  const adicionar = () => {
+    if (novo.trim() && !itens.includes(novo.trim())) {
+      persistir([...itens, novo.trim()])
+      setNovo('')
+    }
+  }
+
+  const remover = (item) => persistir(itens.filter(i => i !== item))
+
+  return (
+    <div className="bg-white border border-border rounded-[14px] p-[18px]">
+      <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Tipos de receita</div>
+      <div className="text-[12.5px] text-text-secondary font-medium mb-[14px]">Categorias disponíveis ao registrar receitas no financeiro.</div>
 
       <div className="flex gap-[8px] mb-[14px]">
         <input
@@ -595,6 +647,7 @@ function MobileConfiguracoes() {
     ...(user.papel === 'admin' ? [{ key: 'convite', label: 'Convite' }] : []),
     { key: 'lotes', label: 'Lotes & pastos' },
     { key: 'custos', label: 'Tipos de custo' },
+    { key: 'receitas', label: 'Tipos de receita' },
     { key: 'sanitarios', label: 'Produtos sanitários' },
     { key: 'racas', label: 'Raças' },
     { key: 'touros', label: 'Touros / sêmen' },
@@ -619,6 +672,7 @@ function MobileConfiguracoes() {
           {abaAtiva === 'convite' && <TabConvite user={user} />}
           {abaAtiva === 'lotes' && <TabLotes />}
           {abaAtiva === 'custos' && <TabTiposCusto />}
+          {abaAtiva === 'receitas' && <TabTiposReceita />}
           {abaAtiva === 'sanitarios' && <TabProdutosSanitarios />}
           {abaAtiva === 'racas' && <TabRacas />}
           {abaAtiva === 'touros' && <TabTouros />}
@@ -661,7 +715,7 @@ function MobileConfiguracoes() {
   )
 }
 
-const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', sanitarios: 'Produtos sanitários', racas: 'Raças', touros: 'Touros / sêmen', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
+const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', receitas: 'Tipos de receita', sanitarios: 'Produtos sanitários', racas: 'Raças', touros: 'Touros / sêmen', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
 
 function DesktopConfiguracoes() {
   const [searchParams] = useSearchParams()
@@ -678,6 +732,7 @@ function DesktopConfiguracoes() {
     ...(user.papel === 'admin' ? ['Convite'] : []),
     'Lotes & pastos',
     'Tipos de custo',
+    'Tipos de receita',
     'Produtos sanitários',
     'Raças',
     'Touros / sêmen',
@@ -717,6 +772,7 @@ function DesktopConfiguracoes() {
             {abaAtiva === 'Convite' && <TabConvite user={user} />}
             {abaAtiva === 'Lotes & pastos' && <TabLotes />}
             {abaAtiva === 'Tipos de custo' && <TabTiposCusto />}
+            {abaAtiva === 'Tipos de receita' && <TabTiposReceita />}
             {abaAtiva === 'Produtos sanitários' && <TabProdutosSanitarios />}
             {abaAtiva === 'Raças' && <TabRacas />}
             {abaAtiva === 'Touros / sêmen' && <TabTouros />}
