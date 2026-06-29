@@ -1,5 +1,9 @@
 const BASE = '/api'
 
+function getToken() {
+  return localStorage.getItem('token')
+}
+
 function getFazendaId() {
   try {
     const user = JSON.parse(localStorage.getItem('user'))
@@ -11,13 +15,21 @@ function getFazendaId() {
 
 async function request(path, options = {}) {
   const fazendaId = getFazendaId()
+  const token = getToken()
   const headers = { 'Content-Type': 'application/json', ...options.headers }
   if (fazendaId) headers['x-fazenda-id'] = String(fazendaId)
+  if (token) headers['Authorization'] = `Bearer ${token}`
 
   const res = await fetch(`${BASE}${path}`, {
     headers,
     ...options,
   })
+  if (res.status === 401 && !path.startsWith('/auth/')) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.href = '/login'
+    throw new Error('Sessão expirada')
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
     throw new Error(err.error || 'Erro na requisição')
@@ -75,8 +87,18 @@ export const api = {
   },
 
   auth: {
-    login: (data) => request('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+    login: async (data) => {
+      const res = await request('/auth/login', { method: 'POST', body: JSON.stringify(data) })
+      if (res.token) localStorage.setItem('token', res.token)
+      return res
+    },
     register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+    me: () => request('/auth/me'),
+    logout: () => {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    },
   },
 
   fazendas: {

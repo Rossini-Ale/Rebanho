@@ -45,7 +45,7 @@ export default function CadastroPage() {
 
     setLoading(true)
     try {
-      await api.auth.register({
+      const regResult = await api.auth.register({
         nome: form.nome,
         usuario: form.usuario,
         email: form.email,
@@ -55,8 +55,10 @@ export default function CadastroPage() {
         localizacao_fazenda: form.papel === 'admin' ? form.localizacao_fazenda : undefined,
         codigo_convite: form.papel === 'operador' ? form.codigo_convite : undefined,
       })
+      if (regResult.token) localStorage.setItem('token', regResult.token)
       const user = await api.auth.login({ usuario: form.usuario, senha: form.senha })
-      localStorage.setItem('user', JSON.stringify(user))
+      const { token, ...userData } = user
+      localStorage.setItem('user', JSON.stringify(userData))
       navigate('/')
     } catch (err) {
       setErro(err.message || 'Erro ao criar conta')

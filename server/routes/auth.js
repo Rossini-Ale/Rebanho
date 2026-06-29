@@ -1,9 +1,12 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
 import pool from '../db.js'
+import { JWT_SECRET } from '../middleware.js'
 
 const router = Router()
+const TOKEN_EXPIRY = '7d'
 
 function gerarCodigo(nome) {
   const slug = nome.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]/g, '-').replace(/-+/g, '-').slice(0, 12)
@@ -25,7 +28,8 @@ router.post('/login', async (req, res) => {
   if (!valid) return res.status(401).json({ error: 'Senha incorreta' })
 
   const { senha_hash, ...user } = rows[0]
-  res.json(user)
+  const token = jwt.sign({ id: user.id, fazenda_id: user.fazenda_id, papel: user.papel }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY })
+  res.json({ ...user, token })
 })
 
 router.post('/register', async (req, res) => {
@@ -64,11 +68,33 @@ router.post('/register', async (req, res) => {
   }
 
   const hash = await bcrypt.hash(senha, 10)
+  const papelFinal = papel || 'operador'
   const [result] = await pool.query(
     'INSERT INTO usuarios (nome, usuario, senha_hash, email, papel, fazenda_id) VALUES (?, ?, ?, ?, ?, ?)',
-    [nome, usuario, hash, email, papel || 'operador', fazendaId]
+    [nome, usuario, hash, email, papelFinal, fazendaId]
   )
-  res.status(201).json({ id: result.insertId })
+  const token = jwt.sign({ id: result.insertId, fazenda_id: fazendaId, papel: papelFinal }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY })
+  res.status(201).json({ id: result.insertId, token })
+})
+
+router.get('/me', async (req, res) => {
+  const header = req.headers.authorization
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token não fornecido' })
+  }
+  try {
+    const decoded = jwt.verify(header.slice(7), JWT_SECRET)
+    const [rows] = await pool.query(
+      `SELECT u.id, u.nome, u.usuario, u.email, u.papel, u.fazenda_id, f.nome AS fazenda_nome, f.codigo_convite
+       FROM usuarios u LEFT JOIN fazendas f ON u.fazenda_id = f.id
+       WHERE u.id = ?`,
+      [decoded.id]
+    )
+    if (!rows.length) return res.status(401).json({ error: 'Usuário não encontrado' })
+    res.json(rows[0])
+  } catch {
+    return res.status(401).json({ error: 'Token inválido ou expirado' })
+  }
 })
 
 export default router

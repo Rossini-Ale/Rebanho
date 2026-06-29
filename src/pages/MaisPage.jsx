@@ -23,6 +23,7 @@ export default function MaisPage() {
 
   const handleLogout = () => {
     localStorage.removeItem('user')
+    localStorage.removeItem('token')
     navigate('/login')
   }
 

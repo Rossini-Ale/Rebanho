@@ -19,7 +19,8 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const user = await api.auth.login({ usuario, senha })
-      localStorage.setItem('user', JSON.stringify(user))
+      const { token, ...userData } = user
+      localStorage.setItem('user', JSON.stringify(userData))
       navigate('/')
     } catch (err) {
       setErro(err.message || 'Usuário ou senha incorretos')

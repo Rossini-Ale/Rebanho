@@ -4,7 +4,7 @@ import path from 'path'
 import express from 'express'
 import cors from 'cors'
 import pool from './db.js'
-import { fazendaMiddleware } from './middleware.js'
+import { fazendaMiddleware, authMiddleware } from './middleware.js'
 import animaisRouter from './routes/animais.js'
 import lotesRouter from './routes/lotes.js'
 import sanidadeRouter from './routes/sanidade.js'
@@ -31,15 +31,15 @@ app.get('/api/health', async (req, res) => {
   }
 })
 
-app.use('/api/animais', animaisRouter)
-app.use('/api/lotes', lotesRouter)
-app.use('/api/sanidade', sanidadeRouter)
-app.use('/api/reproducao', reproducaoRouter)
-app.use('/api/financeiro', financeiroRouter)
 app.use('/api/auth', authRouter)
-app.use('/api/dashboard', dashboardRouter)
-app.use('/api/fazendas', fazendasRouter)
-app.use('/api/configuracoes', configuracoesRouter)
+app.use('/api/animais', authMiddleware, animaisRouter)
+app.use('/api/lotes', authMiddleware, lotesRouter)
+app.use('/api/sanidade', authMiddleware, sanidadeRouter)
+app.use('/api/reproducao', authMiddleware, reproducaoRouter)
+app.use('/api/financeiro', authMiddleware, financeiroRouter)
+app.use('/api/dashboard', authMiddleware, dashboardRouter)
+app.use('/api/fazendas', authMiddleware, fazendasRouter)
+app.use('/api/configuracoes', authMiddleware, configuracoesRouter)
 
 const distPath = path.join(__dirname, '..', 'dist')
 app.use(express.static(distPath))

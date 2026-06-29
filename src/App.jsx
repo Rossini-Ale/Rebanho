@@ -27,7 +27,12 @@ import useMediaQuery from './hooks/useMediaQuery'
 
 function AuthGuard({ children }) {
   const user = localStorage.getItem('user')
-  if (!user) return <Navigate to="/login" replace />
+  const token = localStorage.getItem('token')
+  if (!user || !token) {
+    localStorage.removeItem('user')
+    localStorage.removeItem('token')
+    return <Navigate to="/login" replace />
+  }
   return children
 }
 
