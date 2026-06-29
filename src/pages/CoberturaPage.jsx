@@ -8,6 +8,8 @@ import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import SegmentedControl from '../components/ui/SegmentedControl'
 import { api } from '../lib/api'
+import Toast from '../components/ui/Toast'
+import useToast from '../hooks/useToast'
 import { touros, fmtData } from '../lib/utils'
 import { ChevronLeft } from 'lucide-react'
 
@@ -61,6 +63,7 @@ function DesktopCobertura() {
   const { data: rawAnimais } = useApi(() => api.animais.listar({ sexo: 'Fêmea' }), [])
   const femeas = rawAnimais || []
   const [salvando, setSalvando] = useState(false)
+  const { toast, showToast, hideToast } = useToast()
   const { data: tourosConfigD } = useApi(() => api.configuracoes.buscar('touros').catch(() => null), [])
   const tourosOptsD = tourosConfigD?.valor || touros
   const [form, setForm] = useState({ femeaId: '', metodo: 'monta', touro: '', dataCobertura: new Date().toISOString().slice(0, 10) })
@@ -71,11 +74,15 @@ function DesktopCobertura() {
     setSalvando(true)
     try {
       await api.reproducao.cobertura({ femea_id: form.femeaId, metodo: form.metodo === 'ia' ? 'IA' : 'monta', touro_info: tourosOptsD.find(t => t.value === form.touro)?.label || form.touro, data_cobertura: form.dataCobertura })
-      navigate('/reproducao')
+      showToast('Cobertura registrada!')
+      setTimeout(() => navigate('/reproducao'), 800)
+    } catch (err) {
+      showToast(err.message || 'Erro ao registrar cobertura', 'error')
     } finally { setSalvando(false) }
   }
 
   return (
+    <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     <Modal
       title="Nova cobertura"
       footer={
@@ -96,6 +103,7 @@ function DesktopCobertura() {
         </div>
       )}
     </Modal>
+    </>
   )
 }
 

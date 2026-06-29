@@ -63,6 +63,8 @@ export default function RegistrarPesoPage() {
       await api.animais.registrarPeso(form.animalId, { peso_kg: parseFloat(form.peso), data: form.data, local: form.local })
       showToast('Peso registrado!')
       setTimeout(() => navigate(`/animais/${form.animalId}`), 800)
+    } catch (err) {
+      showToast(err.message || 'Erro ao registrar peso', 'error')
     } finally { setSalvando(false) }
   }
 

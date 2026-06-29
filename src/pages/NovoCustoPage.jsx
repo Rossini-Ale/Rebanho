@@ -108,10 +108,14 @@ function DesktopCusto() {
   const qtd = loteObj?.qtd_animais || 0
 
   const handleSave = async () => {
-    const valorNum = -Math.abs(parseFloat((form.valor || '0').replace(/\D/g, '')))
-    await api.financeiro.criar({ escopo: form.escopo, lote_id: form.escopo === 'lote' ? form.lote_id : null, tipo: 'custo', categoria: form.categoria, valor: valorNum, data: form.data, recorrencia: form.recorrencia, descricao: form.descricao })
-    showToast('Lançamento salvo!')
-    setTimeout(() => navigate('/financeiro'), 800)
+    try {
+      const valorNum = -Math.abs(parseFloat((form.valor || '0').replace(/\D/g, '')))
+      await api.financeiro.criar({ escopo: form.escopo, lote_id: form.escopo === 'lote' ? form.lote_id : null, tipo: 'custo', categoria: form.categoria, valor: valorNum, data: form.data, recorrencia: form.recorrencia, descricao: form.descricao })
+      showToast('Lançamento salvo!')
+      setTimeout(() => navigate('/financeiro'), 800)
+    } catch (err) {
+      showToast(err.message || 'Erro ao salvar lançamento', 'error')
+    }
   }
 
   const ctaLabel = form.escopo === 'lote' ? `Lançar nos ${qtd}` : form.escopo === 'animal' ? 'Salvar no animal' : 'Salvar custo'

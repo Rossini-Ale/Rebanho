@@ -43,7 +43,14 @@ function MobileNotificacoes() {
   )
 }
 
+const getAlertAction = (alert) => {
+  if (alert.title.toLowerCase().includes('parto')) return '/reproducao'
+  if (alert.title.toLowerCase().includes('vencido') || (alert.subtitle || '').toLowerCase().includes('lote')) return '/sanidade'
+  return '/animais'
+}
+
 function DesktopNotificacoes() {
+  const navigate = useNavigate()
   const { data: alertas, loading } = useApi(() => api.dashboard.alertas(), [])
   const lista = alertas || []
 
@@ -62,7 +69,8 @@ function DesktopNotificacoes() {
           {lista.map((n, i) => (
             <div
               key={i}
-              className="bg-white border border-[#eee9df] rounded-[14px] py-[14px] px-[18px] mb-[10px] cursor-pointer hover:shadow-card transition-shadow"
+              onClick={() => navigate(getAlertAction(n))}
+              className="bg-white border border-[#eee9df] rounded-[14px] py-[14px] px-[18px] mb-[10px] cursor-pointer hover:bg-[#f5f3ec] hover:shadow-card transition-all"
               style={{ borderLeft: `4px solid ${urgenciaColors[n.urgency] || '#588157'}` }}
             >
               <div className="flex justify-between items-start">

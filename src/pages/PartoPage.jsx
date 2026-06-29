@@ -8,6 +8,8 @@ import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import SegmentedControl from '../components/ui/SegmentedControl'
 import { api } from '../lib/api'
+import Toast from '../components/ui/Toast'
+import useToast from '../hooks/useToast'
 import { ChevronLeft } from 'lucide-react'
 
 function FormContent({ form, update, femeas }) {
@@ -65,14 +67,21 @@ function DesktopParto() {
   const { data: rawAnimais } = useApi(() => api.animais.listar({ sexo: 'Fêmea' }), [])
   const femeas = rawAnimais || []
   const [form, setForm] = useState({ maeId: '', dataParto: new Date().toISOString().slice(0, 10), situacao: 'vivo', sexoBezerro: 'Fêmea', pesoBezerro: '', brincoBezerro: '' })
+  const { toast, showToast, hideToast } = useToast()
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const handleSave = async () => {
-    await api.reproducao.parto({ femea_id: form.maeId, data_parto: form.dataParto, bezerro_situacao: form.situacao, bezerro_sexo: form.sexoBezerro, bezerro_peso: form.pesoBezerro, bezerro_brinco: form.brincoBezerro })
-    navigate('/reproducao')
+    try {
+      await api.reproducao.parto({ femea_id: form.maeId, data_parto: form.dataParto, bezerro_situacao: form.situacao, bezerro_sexo: form.sexoBezerro, bezerro_peso: form.pesoBezerro, bezerro_brinco: form.brincoBezerro })
+      showToast('Parto registrado com sucesso!')
+      setTimeout(() => navigate('/reproducao'), 800)
+    } catch (err) {
+      showToast(err.message || 'Erro ao registrar parto', 'error')
+    }
   }
 
   return (
+    <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     <Modal
       title="Registrar parto"
       footer={
@@ -84,6 +93,7 @@ function DesktopParto() {
     >
       <FormContent form={form} update={update} femeas={femeas} />
     </Modal>
+    </>
   )
 }
 

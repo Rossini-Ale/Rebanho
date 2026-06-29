@@ -37,6 +37,7 @@ export const api = {
     mover: (id, data) => request(`/animais/${id}/mover`, { method: 'POST', body: JSON.stringify(data) }),
     custos: (id) => request(`/animais/${id}/custos`),
     reproducao: (id) => request(`/animais/${id}/reproducao`),
+    excluir: (id) => request(`/animais/${id}`, { method: 'DELETE' }),
   },
 
   lotes: {

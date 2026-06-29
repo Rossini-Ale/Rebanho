@@ -8,6 +8,8 @@ import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import SegmentedControl from '../components/ui/SegmentedControl'
 import { api } from '../lib/api'
+import Toast from '../components/ui/Toast'
+import useToast from '../hooks/useToast'
 import { ChevronLeft } from 'lucide-react'
 
 function SaidaForm({ animais, form, update }) {
@@ -59,6 +61,7 @@ export default function RegistrarSaidaPage() {
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const [salvando, setSalvando] = useState(false)
+  const { toast, showToast, hideToast } = useToast()
 
   const handleSave = async () => {
     if (!form.animalId) return
@@ -76,7 +79,10 @@ export default function RegistrarSaidaPage() {
           descricao: `Venda ${form.comprador ? '· ' + form.comprador : ''} · ${form.pesoSaida} kg`,
         })
       }
-      navigate('/animais')
+      showToast('Saída registrada com sucesso!')
+      setTimeout(() => navigate('/animais'), 800)
+    } catch (err) {
+      showToast(err.message || 'Erro ao registrar saída', 'error')
     } finally { setSalvando(false) }
   }
 
@@ -86,6 +92,7 @@ export default function RegistrarSaidaPage() {
   if (isDesktop) {
     const modalTitle = form.tipo === 'venda' ? 'Registrar venda' : form.tipo === 'morte' ? 'Registrar morte' : 'Registrar perda'
     return (
+      <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <Modal
         title={modalTitle}
         footer={
@@ -97,6 +104,7 @@ export default function RegistrarSaidaPage() {
       >
         {content}
       </Modal>
+      </>
     )
   }
 

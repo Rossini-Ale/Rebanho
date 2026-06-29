@@ -180,7 +180,19 @@ function DesktopInicio() {
             )}
           </div>
           <div className="grid grid-cols-3 gap-[10px]">
-            {(alertas || []).slice(0, 6).map((a, i) => <AlertCard key={i} {...a} />)}
+            {(alertas || []).slice(0, 6).map((a, i) => (
+              <div
+                key={i}
+                onClick={() => navigate((() => {
+                  if (a.title.toLowerCase().includes('parto')) return '/reproducao'
+                  if (a.title.toLowerCase().includes('vencido') || (a.subtitle || '').toLowerCase().includes('lote')) return '/sanidade'
+                  return '/animais'
+                })())}
+                className="cursor-pointer hover:bg-[#f5f3ec] transition-colors rounded-[14px]"
+              >
+                <AlertCard {...a} />
+              </div>
+            ))}
           </div>
           {(alertas || []).length === 0 && (
             <div className="text-center text-text-secondary text-[14px] py-[16px]">Nenhuma pendência no momento.</div>

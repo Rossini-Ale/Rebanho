@@ -3,9 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
 import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import Toast from '../components/ui/Toast'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
-import { calcularIdade, fmtDataCurta, fmtMoeda } from '../lib/utils'
-import { ChevronLeft, Scale, ArrowRightLeft, LogOut } from 'lucide-react'
+import { calcularIdade, fmtDataCurta, fmtMoeda, racas } from '../lib/utils'
+import { ChevronLeft, Scale, ArrowRightLeft, LogOut, Pencil } from 'lucide-react'
 
 const statusStyle = {
   parto_proximo: { label: 'Parto próximo', color: '#a9711f', bg: '#f6eed9' },
@@ -212,12 +218,61 @@ function TabReproducao({ animalId }) {
   )
 }
 
-function DesktopPerfil({ animal, eventos, pesagens }) {
+function DesktopPerfil({ animal, eventos, pesagens, reload }) {
   const navigate = useNavigate()
   const [abaAtiva, setAbaAtiva] = useState('Histórico')
+  const { toast, showToast, hideToast } = useToast()
   const idade = calcularIdade(animal.data_nascimento)
   const lote = animal.lote_nome || '—'
   const peso = animal.peso_atual ? parseFloat(animal.peso_atual) : '—'
+
+  // Edit modal state
+  const [editando, setEditando] = useState(false)
+  const [editForm, setEditForm] = useState(null)
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
+  const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const { data: racasConfig } = useApi(() => api.configuracoes.buscar('racas').catch(() => null), [])
+  const racasList = racasConfig?.valor || racas
+
+  // Delete state
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const abrirEdicao = () => {
+    setEditForm({
+      brinco: animal.brinco,
+      sexo: animal.sexo === 'Fêmea' ? 'femea' : 'macho',
+      raca: animal.raca,
+      nascimento: animal.data_nascimento ? animal.data_nascimento.slice(0, 10) : '',
+      origem: animal.origem,
+      lote_id: animal.lote_id ? String(animal.lote_id) : '',
+      situacao: animal.situacao,
+      sisbov: animal.sisbov || '',
+    })
+    setEditando(true)
+  }
+
+  const handleEditSave = async () => {
+    setSalvandoEdit(true)
+    try {
+      await api.animais.atualizar(animal.id, {
+        brinco: editForm.brinco,
+        sexo: editForm.sexo === 'femea' ? 'Fêmea' : 'Macho',
+        raca: editForm.raca,
+        data_nascimento: editForm.nascimento,
+        origem: editForm.origem,
+        lote_id: editForm.lote_id || null,
+        situacao: editForm.situacao,
+        sisbov: editForm.sisbov,
+      })
+      showToast('Animal atualizado com sucesso!')
+      setEditando(false)
+      reload()
+    } catch (err) {
+      showToast(err.message || 'Erro ao salvar', 'error')
+    } finally { setSalvandoEdit(false) }
+  }
+
+  const updateEdit = (field, value) => setEditForm(f => ({ ...f, [field]: value }))
 
   const info = [
     { label: 'Brinco', value: animal.brinco, mono: true },
@@ -234,6 +289,8 @@ function DesktopPerfil({ animal, eventos, pesagens }) {
 
   return (
     <>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
+
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.01em]">Animal {animal.brinco}</div>
@@ -242,6 +299,9 @@ function DesktopPerfil({ animal, eventos, pesagens }) {
           </div>
         </div>
         <div className="flex gap-[10px] items-center">
+          <Button variant="secondary" onClick={abrirEdicao}>
+            <span className="flex items-center gap-[6px]"><Pencil size={14} /> Editar</span>
+          </Button>
           <Button variant="secondary" onClick={() => navigate(`/mover-lote?animal=${animal.id}`)}>Mover de lote</Button>
           <button onClick={() => navigate(`/registrar-peso?animal=${animal.id}`)} className="bg-primary text-white rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer border-none">Registrar peso</button>
         </div>
@@ -281,6 +341,10 @@ function DesktopPerfil({ animal, eventos, pesagens }) {
                 <LogOut size={15} /> Registrar saída
               </button>
             </div>
+
+            <button onClick={() => setConfirmDelete(true)} className="text-[13px] font-semibold text-danger cursor-pointer bg-transparent border-none hover:underline mt-[4px] text-left">
+              Excluir animal
+            </button>
           </div>
 
           <div>
@@ -304,6 +368,108 @@ function DesktopPerfil({ animal, eventos, pesagens }) {
           </div>
         </div>
       </div>
+
+      {editando && editForm && (
+        <Modal
+          title="Editar animal"
+          subtitle={`Brinco #${animal.brinco}`}
+          width={520}
+          onClose={() => setEditando(false)}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setEditando(false)}>Cancelar</Button>
+              <Button onClick={handleEditSave} disabled={salvandoEdit}>
+                {salvandoEdit ? 'Salvando…' : 'Salvar alterações'}
+              </Button>
+            </>
+          }
+        >
+          <Input
+            label="Brinco"
+            value={editForm.brinco}
+            onChange={e => updateEdit('brinco', e.target.value)}
+            mono
+            className="mb-[16px]"
+          />
+
+          <div className="flex gap-[14px] mb-[16px]">
+            <Select
+              label="Sexo"
+              value={editForm.sexo}
+              onChange={e => updateEdit('sexo', e.target.value)}
+              options={[{ value: 'femea', label: 'Fêmea' }, { value: 'macho', label: 'Macho' }]}
+              className="flex-1"
+            />
+            <Select
+              label="Raça"
+              value={editForm.raca}
+              onChange={e => updateEdit('raca', e.target.value)}
+              options={racasList.map(r => ({ value: r, label: r }))}
+              className="flex-1"
+            />
+          </div>
+
+          <div className="flex gap-[14px] mb-[16px]">
+            <Input
+              label="Nascimento"
+              type="date"
+              value={editForm.nascimento}
+              onChange={e => updateEdit('nascimento', e.target.value)}
+              className="flex-1"
+            />
+            <Select
+              label="Origem"
+              value={editForm.origem}
+              onChange={e => updateEdit('origem', e.target.value)}
+              options={[{ value: 'nascido_aqui', label: 'Nascido aqui' }, { value: 'comprado', label: 'Comprado' }]}
+              className="flex-1"
+            />
+          </div>
+
+          <Select
+            label="Lote"
+            value={editForm.lote_id}
+            onChange={e => updateEdit('lote_id', e.target.value)}
+            options={[{ value: '', label: 'Sem lote' }, ...(lotes || []).map(l => ({ value: String(l.id), label: l.nome }))]}
+            className="mb-[16px]"
+          />
+
+          <Select
+            label="Situação"
+            value={editForm.situacao}
+            onChange={e => updateEdit('situacao', e.target.value)}
+            options={[
+              { value: 'ativo', label: 'Ativo' },
+              { value: 'vendido', label: 'Vendido' },
+              { value: 'morto', label: 'Morto' },
+              { value: 'quarentena', label: 'Quarentena' },
+              { value: 'prenhe', label: 'Prenhe' },
+            ]}
+            className="mb-[16px]"
+          />
+
+          <Input
+            label="SISBOV"
+            value={editForm.sisbov}
+            onChange={e => updateEdit('sisbov', e.target.value)}
+            placeholder="Código SISBOV (opcional)"
+            className="mb-[4px]"
+          />
+        </Modal>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Excluir animal"
+          message={`Tem certeza que deseja excluir o animal #${animal.brinco}? Todos os dados (pesagens, eventos, custos) serão removidos permanentemente.`}
+          confirmLabel="Excluir"
+          onConfirm={async () => {
+            await api.animais.excluir(animal.id)
+            navigate('/animais')
+          }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
     </>
   )
 }
@@ -311,7 +477,7 @@ function DesktopPerfil({ animal, eventos, pesagens }) {
 export default function AnimalPerfilPage() {
   const { id } = useParams()
   const isDesktop = useMediaQuery('(min-width: 768px)')
-  const { data: animal, loading: loadingAnimal } = useApi(() => api.animais.buscar(id), [id])
+  const { data: animal, loading: loadingAnimal, reload } = useApi(() => api.animais.buscar(id), [id])
   const { data: eventos } = useApi(() => api.animais.historico(id), [id])
   const { data: pesagens } = useApi(() => api.animais.pesagens(id), [id])
 
@@ -319,6 +485,6 @@ export default function AnimalPerfilPage() {
   if (!animal) return <div className="flex-1 flex items-center justify-center text-text-secondary">Animal não encontrado.</div>
 
   return isDesktop
-    ? <DesktopPerfil animal={animal} eventos={eventos || []} pesagens={pesagens || []} />
+    ? <DesktopPerfil animal={animal} eventos={eventos || []} pesagens={pesagens || []} reload={reload} />
     : <MobilePerfil animal={animal} eventos={eventos || []} />
 }

@@ -146,4 +146,9 @@ router.post('/:id/mover', async (req, res) => {
   res.json({ ok: true })
 })
 
+router.delete('/:id', async (req, res) => {
+  await pool.query('DELETE FROM animais WHERE id = ? AND fazenda_id = ?', [req.params.id, req.fazendaId])
+  res.json({ ok: true })
+})
+
 export default router

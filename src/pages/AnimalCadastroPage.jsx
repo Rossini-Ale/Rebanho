@@ -142,6 +142,8 @@ function DesktopCadastro() {
       })
       showToast('Animal cadastrado com sucesso!')
       setTimeout(() => navigate('/animais'), 800)
+    } catch (err) {
+      showToast(err.message || 'Erro ao cadastrar animal', 'error')
     } finally { setSalvando(false) }
   }
 

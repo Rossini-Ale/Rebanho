@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
@@ -11,7 +12,6 @@ import { SkeletonTable } from '../components/ui/Skeleton'
 const mesesAbrev = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
 const mesAtual = meses[new Date().getMonth()]
-const anoAtual = new Date().getFullYear()
 
 function MobileFinanceiro() {
   const navigate = useNavigate()
@@ -77,10 +77,16 @@ function MobileFinanceiro() {
   )
 }
 
+const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const selectStyle = "appearance-none bg-white border-[1.5px] border-field-border rounded-sidebar-item py-[9px] px-[14px] pr-[30px] text-[13.5px] font-bold text-primary-dark outline-none cursor-pointer"
+const selectBg = { backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%237c8378\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }
+
 function DesktopFinanceiro() {
   const navigate = useNavigate()
-  const { data: lancamentos, loading } = useApi(() => api.financeiro.listar(), [])
-  const { data: resumo } = useApi(() => api.financeiro.resumo(), [])
+  const [mesSel, setMesSel] = useState(new Date().getMonth() + 1)
+  const [anoSel, setAnoSel] = useState(new Date().getFullYear())
+  const { data: lancamentos, loading } = useApi(() => api.financeiro.listar({ mes: mesSel, ano: anoSel }), [mesSel, anoSel])
+  const { data: resumo } = useApi(() => api.financeiro.resumo({ mes: mesSel, ano: anoSel }), [mesSel, anoSel])
   const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
   const lista = lancamentos || []
   const rec = resumo ? parseFloat(resumo.receita) : 0
@@ -94,9 +100,17 @@ function DesktopFinanceiro() {
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.01em]">Financeiro</div>
-          <div className="text-[13px] text-text-secondary font-medium">Resultado de {mesAtual} {anoAtual}</div>
+          <div className="text-[13px] text-text-secondary font-medium">Resultado de {mesesNomes[mesSel - 1].toLowerCase()} {anoSel}</div>
         </div>
         <div className="flex gap-[10px] items-center">
+          <div className="flex gap-[8px] items-center">
+            <select value={mesSel} onChange={e => setMesSel(Number(e.target.value))} className={selectStyle} style={selectBg}>
+              {mesesNomes.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+            </select>
+            <select value={anoSel} onChange={e => setAnoSel(Number(e.target.value))} className={selectStyle} style={selectBg}>
+              {[new Date().getFullYear(), new Date().getFullYear() - 1].map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
           <button
             onClick={() => {
               const dados = { exportado_em: new Date().toISOString(), lancamentos: lista, resumo: { receita: rec, despesa: desp, resultado: res } }
@@ -104,7 +118,7 @@ function DesktopFinanceiro() {
               const url = URL.createObjectURL(blob)
               const a = document.createElement('a')
               a.href = url
-              a.download = `financeiro-${mesAtual}-${anoAtual}.json`
+              a.download = `financeiro-${mesesNomes[mesSel - 1].toLowerCase()}-${anoSel}.json`
               a.click()
               URL.revokeObjectURL(url)
             }}
@@ -116,10 +130,10 @@ function DesktopFinanceiro() {
 
       <div className="flex-1 overflow-auto p-[22px_26px] bg-header-bg">
         <div className="grid grid-cols-4 gap-[14px] mb-[16px]">
-          <KPITile label="Receita" value={fmtMoeda(rec)} subtitle={mesAtual} />
-          <KPITile label="Despesa" value={fmtMoeda(desp)} subtitle={mesAtual} />
-          <KPITile label="Resultado" value={`+${fmtMoeda(res)}`} subtitle={mesAtual} />
-          <KPITile label="Margem" value={rec ? `${Math.round((res / rec) * 100)}%` : '—'} subtitle={`acum. ${new Date().getFullYear()}`} variant="primary" />
+          <KPITile label="Receita" value={fmtMoeda(rec)} subtitle={mesesNomes[mesSel - 1].toLowerCase()} />
+          <KPITile label="Despesa" value={fmtMoeda(desp)} subtitle={mesesNomes[mesSel - 1].toLowerCase()} />
+          <KPITile label="Resultado" value={`+${fmtMoeda(res)}`} subtitle={mesesNomes[mesSel - 1].toLowerCase()} />
+          <KPITile label="Margem" value={rec ? `${Math.round((res / rec) * 100)}%` : '—'} subtitle={`acum. ${anoSel}`} variant="primary" />
         </div>
 
         <div className="grid grid-cols-[1.5fr_1fr] gap-[14px]">

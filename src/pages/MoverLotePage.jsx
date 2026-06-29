@@ -7,6 +7,8 @@ import Button from '../components/ui/Button'
 import Select from '../components/ui/Select'
 import Input from '../components/ui/Input'
 import { api } from '../lib/api'
+import Toast from '../components/ui/Toast'
+import useToast from '../hooks/useToast'
 import { ChevronLeft } from 'lucide-react'
 
 function MoverForm({ animais, lotes, form, update }) {
@@ -53,6 +55,7 @@ export default function MoverLotePage() {
   const { data: animais } = useApi(() => api.animais.listar(), [])
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const [salvando, setSalvando] = useState(false)
+  const { toast, showToast, hideToast } = useToast()
   const [form, setForm] = useState({ animalId: searchParams.get('animal') || '', loteDestinoId: '', motivo: 'Rotação de pasto', data: new Date().toISOString().slice(0, 10) })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
@@ -61,7 +64,10 @@ export default function MoverLotePage() {
     setSalvando(true)
     try {
       await api.animais.mover(form.animalId, { lote_destino_id: form.loteDestinoId, motivo: form.motivo, data: form.data })
-      navigate(`/animais/${form.animalId}`)
+      showToast('Animal movido com sucesso!')
+      setTimeout(() => navigate(`/animais/${form.animalId}`), 800)
+    } catch (err) {
+      showToast(err.message || 'Erro ao mover animal', 'error')
     } finally { setSalvando(false) }
   }
 
@@ -69,6 +75,7 @@ export default function MoverLotePage() {
 
   if (isDesktop) {
     return (
+      <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <Modal
         title="Mover de lote"
         footer={
@@ -80,6 +87,7 @@ export default function MoverLotePage() {
       >
         {content}
       </Modal>
+      </>
     )
   }
 

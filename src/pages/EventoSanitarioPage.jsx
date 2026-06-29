@@ -82,13 +82,17 @@ function DesktopEvento() {
   const qtd = loteObj?.qtd_animais || 0
 
   const handleSave = async () => {
-    await api.sanidade.criar({
-      tipo: form.tipo, aplicado_em: form.alvo,
-      lote_id: form.alvo === 'lote' ? form.lote_id : null,
-      produto: form.produto, dose: form.dose, data: form.data, responsavel: form.responsavel,
-    })
-    showToast('Evento registrado!')
-    setTimeout(() => navigate('/sanidade'), 800)
+    try {
+      await api.sanidade.criar({
+        tipo: form.tipo, aplicado_em: form.alvo,
+        lote_id: form.alvo === 'lote' ? form.lote_id : null,
+        produto: form.produto, dose: form.dose, data: form.data, responsavel: form.responsavel,
+      })
+      showToast('Evento registrado!')
+      setTimeout(() => navigate('/sanidade'), 800)
+    } catch (err) {
+      showToast(err.message || 'Erro ao registrar evento', 'error')
+    }
   }
 
   return (
