@@ -10,15 +10,18 @@ router.get('/', async (req, res) => {
       (SELECT COUNT(*) FROM animais a WHERE a.lote_id = e.lote_id) AS qtd_animais
     FROM eventos_sanitarios e
     LEFT JOIN lotes l ON e.lote_id = l.id
+    LEFT JOIN animais a2 ON e.animal_id = a2.id
+    WHERE (a2.fazenda_id = ? OR l.fazenda_id = ?)
   `
+  const params = [req.fazendaId, req.fazendaId]
   if (status === 'proximas') {
-    sql += ' WHERE e.data_proxima_dose IS NOT NULL AND e.data_proxima_dose >= CURDATE() ORDER BY e.data_proxima_dose'
+    sql += ' AND e.data_proxima_dose IS NOT NULL AND e.data_proxima_dose >= CURDATE() ORDER BY e.data_proxima_dose'
   } else if (status === 'vencidas') {
-    sql += ' WHERE e.data_proxima_dose IS NOT NULL AND e.data_proxima_dose < CURDATE() ORDER BY e.data_proxima_dose'
+    sql += ' AND e.data_proxima_dose IS NOT NULL AND e.data_proxima_dose < CURDATE() ORDER BY e.data_proxima_dose'
   } else {
     sql += ' ORDER BY e.data DESC'
   }
-  const [rows] = await pool.query(sql)
+  const [rows] = await pool.query(sql, params)
   res.json(rows)
 })
 
@@ -33,7 +36,7 @@ router.post('/', async (req, res) => {
       [tipo, 'lote', lote_id, produto, dose, data, dataProxima, responsavel, custo]
     )
 
-    const [animais] = await pool.query('SELECT id FROM animais WHERE lote_id = ?', [lote_id])
+    const [animais] = await pool.query('SELECT id FROM animais WHERE lote_id = ? AND fazenda_id = ?', [lote_id, req.fazendaId])
     for (const a of animais) {
       await pool.query(
         'INSERT INTO eventos_sanitarios (tipo, aplicado_em, animal_id, lote_id, produto, dose, data, data_proxima_dose, responsavel, custo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',

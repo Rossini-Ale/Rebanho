@@ -1,8 +1,21 @@
 const BASE = '/api'
 
+function getFazendaId() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user'))
+    return user?.fazenda_id || null
+  } catch {
+    return null
+  }
+}
+
 async function request(path, options = {}) {
+  const fazendaId = getFazendaId()
+  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  if (fazendaId) headers['x-fazenda-id'] = String(fazendaId)
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers,
     ...options,
   })
   if (!res.ok) {

@@ -4,6 +4,7 @@ import path from 'path'
 import express from 'express'
 import cors from 'cors'
 import pool from './db.js'
+import { fazendaMiddleware } from './middleware.js'
 import animaisRouter from './routes/animais.js'
 import lotesRouter from './routes/lotes.js'
 import sanidadeRouter from './routes/sanidade.js'
@@ -18,6 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 app.use(cors())
 app.use(express.json())
+app.use(fazendaMiddleware)
 
 app.get('/api/health', async (req, res) => {
   try {
