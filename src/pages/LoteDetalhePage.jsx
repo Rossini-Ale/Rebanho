@@ -1,9 +1,17 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
 import KPITile from '../components/ui/KPITile'
+import Modal from '../components/ui/Modal'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import Toast from '../components/ui/Toast'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Pencil, Trash2 } from 'lucide-react'
 
 const situacaoStyle = {
   ativo: { color: '#588157', bg: '#e7ece4' },
@@ -67,16 +75,64 @@ function MobileDetalhe({ lote, animaisDoLote }) {
   )
 }
 
-function DesktopDetalhe({ lote, animaisDoLote }) {
+function DesktopDetalhe({ lote, animaisDoLote, reload }) {
   const navigate = useNavigate()
+  const { toast, showToast, hideToast } = useToast()
   const qtd = animaisDoLote.length
   const area = lote.area_ha ? parseFloat(lote.area_ha) : null
   const pesos = animaisDoLote.filter(a => a.peso_atual).map(a => parseFloat(a.peso_atual))
   const pm = pesos.length ? Math.round(pesos.reduce((s, p) => s + p, 0) / pesos.length) : 0
   const pctOcupado = lote.capacidade ? Math.round((qtd / lote.capacidade) * 100) : null
 
+  const [editando, setEditando] = useState(false)
+  const [editForm, setEditForm] = useState(null)
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const abrirEdicao = () => {
+    setEditForm({
+      nome: lote.nome || '',
+      tipo: lote.tipo || 'pasto',
+      area_ha: lote.area_ha ? String(parseFloat(lote.area_ha)) : '',
+      capacidade: lote.capacidade ? String(lote.capacidade) : '',
+    })
+    setEditando(true)
+  }
+
+  const handleEditSave = async () => {
+    setSalvandoEdit(true)
+    try {
+      await api.lotes.atualizar(lote.id, {
+        nome: editForm.nome,
+        tipo: editForm.tipo,
+        area_ha: editForm.area_ha ? parseFloat(editForm.area_ha) : null,
+        capacidade: editForm.capacidade ? parseInt(editForm.capacidade) : null,
+      })
+      showToast('Lote atualizado!')
+      setEditando(false)
+      reload()
+    } catch (err) {
+      showToast(err.message || 'Erro ao salvar', 'error')
+    } finally { setSalvandoEdit(false) }
+  }
+
+  const handleDelete = async () => {
+    try {
+      await api.lotes.excluir(lote.id)
+      showToast('Lote excluído!')
+      navigate('/lotes')
+    } catch (err) {
+      showToast(err.message || 'Erro ao excluir', 'error')
+      setConfirmDelete(false)
+    }
+  }
+
+  const updateEdit = (field, value) => setEditForm(f => ({ ...f, [field]: value }))
+
   return (
     <>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
+
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.01em]">{lote.nome}</div>
@@ -85,6 +141,7 @@ function DesktopDetalhe({ lote, animaisDoLote }) {
           </div>
         </div>
         <div className="flex gap-[10px] items-center">
+          <button onClick={abrirEdicao} className="bg-white border-[1.5px] border-[#cfd4c7] text-primary rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer flex items-center gap-[6px]"><Pencil size={14} /> Editar</button>
           <button onClick={() => navigate('/sanidade/novo')} className="bg-primary text-white rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer border-none">Vacinar lote</button>
         </div>
       </div>
@@ -123,7 +180,72 @@ function DesktopDetalhe({ lote, animaisDoLote }) {
             <div className="py-[24px] text-center text-text-secondary text-[14px]">Nenhum animal neste lote.</div>
           )}
         </div>
+
+        <button onClick={() => setConfirmDelete(true)} className="text-[13px] font-semibold text-danger cursor-pointer bg-transparent border-none hover:underline mt-[16px]">
+          Excluir lote
+        </button>
       </div>
+
+      {editando && editForm && (
+        <Modal
+          title="Editar lote"
+          subtitle={lote.nome}
+          width={460}
+          onClose={() => setEditando(false)}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setEditando(false)}>Cancelar</Button>
+              <Button onClick={handleEditSave} disabled={salvandoEdit}>
+                {salvandoEdit ? 'Salvando…' : 'Salvar alterações'}
+              </Button>
+            </>
+          }
+        >
+          <Input
+            label="Nome"
+            value={editForm.nome}
+            onChange={e => updateEdit('nome', e.target.value)}
+            className="mb-[16px]"
+          />
+          <Select
+            label="Tipo"
+            value={editForm.tipo}
+            onChange={e => updateEdit('tipo', e.target.value)}
+            options={[{ value: 'pasto', label: 'Pasto' }, { value: 'curral', label: 'Curral' }, { value: 'maternidade', label: 'Maternidade' }]}
+            className="mb-[16px]"
+          />
+          <div className="flex gap-[14px] mb-[4px]">
+            <Input
+              label="Área (ha)"
+              value={editForm.area_ha}
+              onChange={e => updateEdit('area_ha', e.target.value)}
+              placeholder="0"
+              mono
+              className="flex-1"
+            />
+            <Input
+              label="Capacidade"
+              value={editForm.capacidade}
+              onChange={e => updateEdit('capacidade', e.target.value)}
+              placeholder="0"
+              mono
+              className="flex-1"
+            />
+          </div>
+        </Modal>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Excluir lote"
+          message={qtd > 0
+            ? `Este lote possui ${qtd} animais. Mova-os para outro lote antes de excluir.`
+            : `Tem certeza que deseja excluir o lote "${lote.nome}"? Esta ação não pode ser desfeita.`}
+          confirmLabel={qtd > 0 ? 'Entendi' : 'Excluir'}
+          onConfirm={qtd > 0 ? () => setConfirmDelete(false) : handleDelete}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
     </>
   )
 }
@@ -131,13 +253,13 @@ function DesktopDetalhe({ lote, animaisDoLote }) {
 export default function LoteDetalhePage() {
   const { id } = useParams()
   const isDesktop = useMediaQuery('(min-width: 768px)')
-  const { data: lote, loading } = useApi(() => api.lotes.buscar(id), [id])
+  const { data: lote, loading, reload } = useApi(() => api.lotes.buscar(id), [id])
   const { data: animaisDoLote } = useApi(() => api.lotes.animais(id), [id])
 
   if (loading) return <div className="flex-1 flex items-center justify-center text-text-secondary">Carregando…</div>
   if (!lote) return <div className="flex-1 flex items-center justify-center text-text-secondary">Lote não encontrado.</div>
 
   return isDesktop
-    ? <DesktopDetalhe lote={lote} animaisDoLote={animaisDoLote || []} />
+    ? <DesktopDetalhe lote={lote} animaisDoLote={animaisDoLote || []} reload={reload} />
     : <MobileDetalhe lote={lote} animaisDoLote={animaisDoLote || []} />
 }

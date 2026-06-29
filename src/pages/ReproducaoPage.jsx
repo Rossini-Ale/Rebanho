@@ -1,11 +1,19 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
 import KPITile from '../components/ui/KPITile'
 import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import SegmentedControl from '../components/ui/SegmentedControl'
+import Toast from '../components/ui/Toast'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
-import { fmtDataCurta } from '../lib/utils'
-import { ChevronLeft, Heart } from 'lucide-react'
+import { fmtDataCurta, touros } from '../lib/utils'
+import { ChevronLeft, Heart, Pencil, Trash2 } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState'
 import { SkeletonTable } from '../components/ui/Skeleton'
 
@@ -71,15 +79,67 @@ function MobileReproducao() {
 
 function DesktopReproducao() {
   const navigate = useNavigate()
-  const { data: coberturas, loading } = useApi(() => api.reproducao.listar(), [])
-  const { data: stats } = useApi(() => api.reproducao.stats(), [])
+  const { data: coberturas, loading, reload } = useApi(() => api.reproducao.listar(), [])
+  const { data: stats, reload: reloadStats } = useApi(() => api.reproducao.stats(), [])
+  const { data: tourosConfig } = useApi(() => api.configuracoes.buscar('touros').catch(() => null), [])
+  const tourosOpts = tourosConfig?.valor || touros
+  const { toast, showToast, hideToast } = useToast()
   const lista = coberturas || []
   const st = stats || {}
   const ativas = lista.filter(c => c.status !== 'concluida')
   const proximosPartos = ativas.filter(c => c.status !== 'aguardando').sort((a, b) => (a.data_prevista_parto || '').localeCompare(b.data_prevista_parto || ''))
 
+  const [editando, setEditando] = useState(null)
+  const [editForm, setEditForm] = useState(null)
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+
+  const abrirEdicao = (c) => {
+    setEditForm({
+      metodo: c.metodo === 'IA' ? 'ia' : 'monta',
+      touro: c.touro_info || '',
+      dataCobertura: c.data_cobertura ? c.data_cobertura.slice(0, 10) : '',
+      status: c.status || 'aguardando',
+    })
+    setEditando(c)
+  }
+
+  const handleEditSave = async () => {
+    setSalvandoEdit(true)
+    try {
+      await api.reproducao.atualizarCobertura(editando.id, {
+        metodo: editForm.metodo === 'ia' ? 'IA' : 'monta',
+        touro_info: editForm.touro,
+        data_cobertura: editForm.dataCobertura,
+        status: editForm.status,
+      })
+      showToast('Cobertura atualizada!')
+      setEditando(null)
+      reload()
+      reloadStats()
+    } catch (err) {
+      showToast(err.message || 'Erro ao salvar', 'error')
+    } finally { setSalvandoEdit(false) }
+  }
+
+  const handleDelete = async (c) => {
+    try {
+      await api.reproducao.excluirCobertura(c.id)
+      showToast('Cobertura excluída!')
+      setConfirmDelete(null)
+      reload()
+      reloadStats()
+    } catch (err) {
+      showToast(err.message || 'Erro ao excluir', 'error')
+    }
+  }
+
+  const updateEdit = (field, value) => setEditForm(f => ({ ...f, [field]: value }))
+
   return (
     <>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
+
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.01em]">Reprodução</div>
@@ -117,12 +177,18 @@ function DesktopReproducao() {
           <div className="bg-white border border-border rounded-[14px] p-[18px]">
             <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Coberturas recentes</div>
             {ativas.map((c, i) => (
-                <div key={c.id} className={`flex justify-between items-center py-[12px] ${i < ativas.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+                <div key={c.id} className={`group flex justify-between items-center py-[12px] ${i < ativas.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
                   <div>
                     <div className="font-mono text-[14.5px] font-bold text-primary-dark">{c.brinco}</div>
                     <div className="text-[12px] text-text-secondary">{c.metodo} · {fmtDataCurta(c.data_cobertura)}</div>
                   </div>
-                  <StatusBadge status={c.status} />
+                  <div className="flex items-center gap-[8px]">
+                    <span className="flex gap-[4px] opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => abrirEdicao(c)} className="p-[5px] rounded-[8px] bg-transparent border-none cursor-pointer text-text-secondary hover:bg-chip-bg hover:text-primary-dark transition-colors"><Pencil size={13} /></button>
+                      <button onClick={() => setConfirmDelete(c)} className="p-[5px] rounded-[8px] bg-transparent border-none cursor-pointer text-text-secondary hover:bg-[#fde8e4] hover:text-danger transition-colors"><Trash2 size={13} /></button>
+                    </span>
+                    <StatusBadge status={c.status} />
+                  </div>
                 </div>
               ))}
             {ativas.length === 0 && <div className="py-[12px] text-center text-text-secondary text-[14px]">Nenhuma cobertura ativa.</div>}
@@ -130,6 +196,67 @@ function DesktopReproducao() {
         </div>
         )}
       </div>
+
+      {editando && editForm && (
+        <Modal
+          title="Editar cobertura"
+          subtitle={`Fêmea #${editando.brinco}`}
+          width={460}
+          onClose={() => setEditando(null)}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setEditando(null)}>Cancelar</Button>
+              <Button onClick={handleEditSave} disabled={salvandoEdit}>
+                {salvandoEdit ? 'Salvando…' : 'Salvar alterações'}
+              </Button>
+            </>
+          }
+        >
+          <div className="text-[12px] font-bold text-text-secondary mb-[7px] tracking-[.02em] uppercase">Método</div>
+          <SegmentedControl
+            options={[{ value: 'ia', label: 'IA' }, { value: 'monta', label: 'Monta' }]}
+            value={editForm.metodo}
+            onChange={v => updateEdit('metodo', v)}
+            className="mb-[16px]"
+          />
+          <Select
+            label="Touro"
+            value={editForm.touro}
+            onChange={e => updateEdit('touro', e.target.value)}
+            options={tourosOpts.map ? tourosOpts : touros}
+            className="mb-[16px]"
+          />
+          <Input
+            label="Data da cobertura"
+            type="date"
+            value={editForm.dataCobertura}
+            onChange={e => updateEdit('dataCobertura', e.target.value)}
+            className="mb-[16px]"
+          />
+          <Select
+            label="Status"
+            value={editForm.status}
+            onChange={e => updateEdit('status', e.target.value)}
+            options={[
+              { value: 'aguardando', label: 'Aguardando' },
+              { value: 'confirmada', label: 'Confirmada' },
+              { value: 'parto_proximo', label: 'Parto próximo' },
+              { value: 'concluida', label: 'Concluída' },
+            ]}
+            className="mb-[4px]"
+          />
+        </Modal>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Excluir cobertura"
+          message={`Tem certeza que deseja excluir a cobertura da fêmea #${confirmDelete.brinco}? O status de prenhez será reavaliado.`}
+          confirmLabel="Excluir"
+          onConfirm={() => handleDelete(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </>
   )
 }

@@ -53,4 +53,19 @@ router.post('/', async (req, res) => {
   }
 })
 
+router.put('/:id', async (req, res) => {
+  const { tipo, produto, dose, data, responsavel, custo } = req.body
+  const dataProxima = data ? new Date(new Date(data).getTime() + 180 * 86400000).toISOString().slice(0, 10) : null
+  await pool.query(
+    'UPDATE eventos_sanitarios SET tipo=?, produto=?, dose=?, data=?, data_proxima_dose=?, responsavel=?, custo=? WHERE id=?',
+    [tipo, produto, dose, data, dataProxima, responsavel, custo, req.params.id]
+  )
+  res.json({ ok: true })
+})
+
+router.delete('/:id', async (req, res) => {
+  await pool.query('DELETE FROM eventos_sanitarios WHERE id = ?', [req.params.id])
+  res.json({ ok: true })
+})
+
 export default router

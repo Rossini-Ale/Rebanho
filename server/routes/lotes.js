@@ -51,4 +51,13 @@ router.put('/:id', async (req, res) => {
   res.json({ ok: true })
 })
 
+router.delete('/:id', async (req, res) => {
+  const [[count]] = await pool.query('SELECT COUNT(*) as total FROM animais WHERE lote_id = ? AND fazenda_id = ?', [req.params.id, req.fazendaId])
+  if (count.total > 0) {
+    return res.status(400).json({ error: `Lote possui ${count.total} animais. Mova-os antes de excluir.` })
+  }
+  await pool.query('DELETE FROM lotes WHERE id = ? AND fazenda_id = ?', [req.params.id, req.fazendaId])
+  res.json({ ok: true })
+})
+
 export default router

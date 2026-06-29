@@ -93,4 +93,19 @@ router.post('/', async (req, res) => {
   }
 })
 
+router.put('/:id', async (req, res) => {
+  const { tipo, categoria, valor, data, descricao } = req.body
+  await pool.query(
+    'UPDATE lancamentos_financeiros SET tipo=?, categoria=?, valor=?, data=?, descricao=? WHERE id=? AND lancamento_pai_id IS NULL',
+    [tipo, categoria, valor, data, descricao, req.params.id]
+  )
+  res.json({ ok: true })
+})
+
+router.delete('/:id', async (req, res) => {
+  await pool.query('DELETE FROM lancamentos_financeiros WHERE lancamento_pai_id = ?', [req.params.id])
+  await pool.query('DELETE FROM lancamentos_financeiros WHERE id = ?', [req.params.id])
+  res.json({ ok: true })
+})
+
 export default router

@@ -104,4 +104,34 @@ router.post('/parto', async (req, res) => {
   res.status(201).json({ ok: true, bezerro_id: bezerroId })
 })
 
+router.put('/cobertura/:id', async (req, res) => {
+  const { metodo, touro_info, data_cobertura, status } = req.body
+  const dataPrevParto = data_cobertura
+    ? new Date(new Date(data_cobertura).getTime() + 283 * 86400000).toISOString().slice(0, 10)
+    : undefined
+  let sql = 'UPDATE coberturas SET metodo=?, touro_info=?, data_cobertura=?'
+  const params = [metodo, touro_info, data_cobertura]
+  if (dataPrevParto) { sql += ', data_prevista_parto=?'; params.push(dataPrevParto) }
+  if (status) { sql += ', status=?'; params.push(status) }
+  sql += ' WHERE id=?'
+  params.push(req.params.id)
+  await pool.query(sql, params)
+  res.json({ ok: true })
+})
+
+router.delete('/cobertura/:id', async (req, res) => {
+  const [[cob]] = await pool.query('SELECT femea_id FROM coberturas WHERE id = ?', [req.params.id])
+  await pool.query('DELETE FROM coberturas WHERE id = ?', [req.params.id])
+  if (cob) {
+    const [[outra]] = await pool.query(
+      "SELECT id FROM coberturas WHERE femea_id = ? AND status NOT IN ('concluida') LIMIT 1",
+      [cob.femea_id]
+    )
+    if (!outra) {
+      await pool.query('UPDATE animais SET situacao = "ativo" WHERE id = ? AND fazenda_id = ?', [cob.femea_id, req.fazendaId])
+    }
+  }
+  res.json({ ok: true })
+})
+
 export default router

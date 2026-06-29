@@ -46,17 +46,22 @@ export const api = {
     animais: (id) => request(`/lotes/${id}/animais`),
     criar: (data) => request('/lotes', { method: 'POST', body: JSON.stringify(data) }),
     atualizar: (id, data) => request(`/lotes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    excluir: (id) => request(`/lotes/${id}`, { method: 'DELETE' }),
   },
 
   sanidade: {
     listar: (params) => request(`/sanidade?${new URLSearchParams(params || {})}`),
     criar: (data) => request('/sanidade', { method: 'POST', body: JSON.stringify(data) }),
+    atualizar: (id, data) => request(`/sanidade/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    excluir: (id) => request(`/sanidade/${id}`, { method: 'DELETE' }),
   },
 
   reproducao: {
     listar: () => request('/reproducao'),
     stats: () => request('/reproducao/stats'),
     cobertura: (data) => request('/reproducao/cobertura', { method: 'POST', body: JSON.stringify(data) }),
+    atualizarCobertura: (id, data) => request(`/reproducao/cobertura/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    excluirCobertura: (id) => request(`/reproducao/cobertura/${id}`, { method: 'DELETE' }),
     parto: (data) => request('/reproducao/parto', { method: 'POST', body: JSON.stringify(data) }),
   },
 
@@ -65,6 +70,8 @@ export const api = {
     resumo: (params) => request(`/financeiro/resumo?${new URLSearchParams(params || {})}`),
     porLote: () => request('/financeiro/por-lote'),
     criar: (data) => request('/financeiro', { method: 'POST', body: JSON.stringify(data) }),
+    atualizar: (id, data) => request(`/financeiro/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    excluir: (id) => request(`/financeiro/${id}`, { method: 'DELETE' }),
   },
 
   auth: {

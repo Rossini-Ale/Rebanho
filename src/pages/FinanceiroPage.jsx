@@ -3,9 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
 import KPITile from '../components/ui/KPITile'
+import Modal from '../components/ui/Modal'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import Toast from '../components/ui/Toast'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
-import { fmtMoeda, fmtDataCurta } from '../lib/utils'
-import { ChevronLeft, Download, Wallet } from 'lucide-react'
+import { fmtMoeda, fmtDataCurta, categoriasCusto } from '../lib/utils'
+import { ChevronLeft, Download, Wallet, Pencil, Trash2 } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState'
 import { SkeletonTable } from '../components/ui/Skeleton'
 
@@ -85,9 +92,12 @@ function DesktopFinanceiro() {
   const navigate = useNavigate()
   const [mesSel, setMesSel] = useState(new Date().getMonth() + 1)
   const [anoSel, setAnoSel] = useState(new Date().getFullYear())
-  const { data: lancamentos, loading } = useApi(() => api.financeiro.listar({ mes: mesSel, ano: anoSel }), [mesSel, anoSel])
-  const { data: resumo } = useApi(() => api.financeiro.resumo({ mes: mesSel, ano: anoSel }), [mesSel, anoSel])
+  const { data: lancamentos, loading, reload } = useApi(() => api.financeiro.listar({ mes: mesSel, ano: anoSel }), [mesSel, anoSel])
+  const { data: resumo, reload: reloadResumo } = useApi(() => api.financeiro.resumo({ mes: mesSel, ano: anoSel }), [mesSel, anoSel])
   const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
+  const { data: catConfig } = useApi(() => api.configuracoes.buscar('categorias_custo').catch(() => null), [])
+  const catList = catConfig?.valor || categoriasCusto
+  const { toast, showToast, hideToast } = useToast()
   const lista = lancamentos || []
   const rec = resumo ? parseFloat(resumo.receita) : 0
   const desp = resumo ? parseFloat(resumo.despesa) : 0
@@ -95,8 +105,63 @@ function DesktopFinanceiro() {
   const porCategoria = resumo?.por_categoria || []
   const maxCat = porCategoria.length ? Math.max(...porCategoria.map(c => parseFloat(c.total))) : 1
 
+  const [editando, setEditando] = useState(null)
+  const [editForm, setEditForm] = useState(null)
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+
+  const abrirEdicao = (l) => {
+    const val = parseFloat(l.valor)
+    setEditForm({
+      tipo: val > 0 ? 'receita' : 'custo',
+      categoria: l.categoria || '',
+      valor: String(Math.abs(val)),
+      data: l.data ? l.data.slice(0, 10) : '',
+      descricao: l.descricao || '',
+    })
+    setEditando(l)
+  }
+
+  const handleEditSave = async () => {
+    setSalvandoEdit(true)
+    try {
+      const valorNum = editForm.tipo === 'receita'
+        ? Math.abs(parseFloat(editForm.valor))
+        : -Math.abs(parseFloat(editForm.valor))
+      await api.financeiro.atualizar(editando.id, {
+        tipo: editForm.tipo,
+        categoria: editForm.categoria,
+        valor: valorNum,
+        data: editForm.data,
+        descricao: editForm.descricao,
+      })
+      showToast('Lançamento atualizado!')
+      setEditando(null)
+      reload()
+      reloadResumo()
+    } catch (err) {
+      showToast(err.message || 'Erro ao salvar', 'error')
+    } finally { setSalvandoEdit(false) }
+  }
+
+  const handleDelete = async (l) => {
+    try {
+      await api.financeiro.excluir(l.id)
+      showToast('Lançamento excluído!')
+      setConfirmDelete(null)
+      reload()
+      reloadResumo()
+    } catch (err) {
+      showToast(err.message || 'Erro ao excluir', 'error')
+    }
+  }
+
+  const updateEdit = (field, value) => setEditForm(f => ({ ...f, [field]: value }))
+
   return (
     <>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
+
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.01em]">Financeiro</div>
@@ -202,20 +267,24 @@ function DesktopFinanceiro() {
 
         <div className="mt-[14px] bg-white border border-border rounded-[14px] p-[18px]">
           <div className="flex justify-between items-center mb-[14px]">
-            <span className="text-[15px] font-extrabold text-primary-dark">Lançamentos recentes</span>
+            <span className="text-[15px] font-extrabold text-primary-dark">Lançamentos</span>
           </div>
-          <div className="grid grid-cols-[1.6fr_0.7fr_0.8fr_1fr] py-[10px] px-[4px] text-[12px] font-bold text-text-secondary uppercase"><span>Descrição</span><span>Tipo</span><span>Data</span><span className="text-right">Valor</span></div>
-          {lista.slice(0, 4).map(l => {
+          <div className="grid grid-cols-[1.4fr_0.7fr_0.8fr_0.9fr_0.5fr] py-[10px] px-[4px] text-[12px] font-bold text-text-secondary uppercase"><span>Descrição</span><span>Tipo</span><span>Data</span><span className="text-right">Valor</span><span></span></div>
+          {lista.map(l => {
             const val = parseFloat(l.valor)
             const isPositive = val > 0
             const tipoLabel = isPositive ? 'Receita' : (l.tipo === 'compra' ? 'Compra' : 'Custo')
             const tipoColor = isPositive ? 'text-primary-medium' : 'text-danger'
             return (
-              <div key={l.id} className="grid grid-cols-[1.6fr_0.7fr_0.8fr_1fr] py-[11px] px-[4px] text-[13.5px] border-t border-[#f0ede4] text-text-body items-center">
+              <div key={l.id} className="group grid grid-cols-[1.4fr_0.7fr_0.8fr_0.9fr_0.5fr] py-[11px] px-[4px] text-[13.5px] border-t border-[#f0ede4] text-text-body items-center">
                 <span className="font-bold text-primary-dark">{l.descricao || l.categoria}</span>
                 <span className={`text-[12px] font-bold ${tipoColor}`}>{tipoLabel}</span>
                 <span className="font-mono">{fmtDataCurta(l.data)}</span>
                 <span className={`font-mono font-bold text-right ${isPositive ? 'text-primary-medium' : 'text-danger'}`}>{isPositive ? '+' : '−'}{fmtMoeda(l.valor)}</span>
+                <span className="flex gap-[6px] justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => abrirEdicao(l)} className="p-[6px] rounded-[8px] bg-transparent border-none cursor-pointer text-text-secondary hover:bg-chip-bg hover:text-primary-dark transition-colors"><Pencil size={14} /></button>
+                  <button onClick={() => setConfirmDelete(l)} className="p-[6px] rounded-[8px] bg-transparent border-none cursor-pointer text-text-secondary hover:bg-[#fde8e4] hover:text-danger transition-colors"><Trash2 size={14} /></button>
+                </span>
               </div>
             )
           })}
@@ -225,6 +294,69 @@ function DesktopFinanceiro() {
           )}
         </div>
       </div>
+
+      {editando && editForm && (
+        <Modal
+          title="Editar lançamento"
+          subtitle={editando.descricao || editando.categoria}
+          width={460}
+          onClose={() => setEditando(null)}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setEditando(null)}>Cancelar</Button>
+              <Button onClick={handleEditSave} disabled={salvandoEdit}>
+                {salvandoEdit ? 'Salvando…' : 'Salvar alterações'}
+              </Button>
+            </>
+          }
+        >
+          <Select
+            label="Tipo"
+            value={editForm.tipo}
+            onChange={e => updateEdit('tipo', e.target.value)}
+            options={[{ value: 'receita', label: 'Receita' }, { value: 'custo', label: 'Custo' }, { value: 'compra', label: 'Compra' }]}
+            className="mb-[16px]"
+          />
+          <Select
+            label="Categoria"
+            value={editForm.categoria}
+            onChange={e => updateEdit('categoria', e.target.value)}
+            options={catList.map(c => ({ value: c, label: c }))}
+            className="mb-[16px]"
+          />
+          <Input
+            label="Valor (R$)"
+            value={editForm.valor}
+            onChange={e => updateEdit('valor', e.target.value)}
+            mono
+            className="mb-[16px]"
+          />
+          <Input
+            label="Data"
+            type="date"
+            value={editForm.data}
+            onChange={e => updateEdit('data', e.target.value)}
+            className="mb-[16px]"
+          />
+          <Input
+            label="Descrição"
+            value={editForm.descricao}
+            onChange={e => updateEdit('descricao', e.target.value)}
+            placeholder="Descrição do lançamento"
+            className="mb-[4px]"
+          />
+        </Modal>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Excluir lançamento"
+          message={`Tem certeza que deseja excluir "${confirmDelete.descricao || confirmDelete.categoria}"? Esta ação não pode ser desfeita.`}
+          confirmLabel="Excluir"
+          onConfirm={() => handleDelete(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </>
   )
 }
