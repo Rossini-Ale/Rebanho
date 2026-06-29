@@ -8,10 +8,19 @@ import { fmtDataCurta } from '../lib/utils'
 import { ChevronLeft } from 'lucide-react'
 
 const statusStyle = {
-  parto_proximo: { label: 'PARTO AMANHÃ', color: '#a9711f', bg: '#f6eed9' },
-  confirmada: { label: 'CONFIRMADA', color: '#588157', bg: '#e7ece4' },
-  aguardando: { label: 'AGUARDANDO', color: '#7c8378', bg: '#eceadf' },
-  concluida: { label: 'CONCLUÍDA', color: '#588157', bg: '#e7ece4' },
+  aguardando: { label: 'Aguardando', color: '#7c8378', bg: '#eceadf' },
+  confirmada: { label: 'Confirmada', color: '#588157', bg: '#e7ece4' },
+  parto_proximo: { label: 'Parto próximo', color: '#a9711f', bg: '#f6eed9' },
+  concluida: { label: 'Concluída', color: '#588157', bg: '#e7ece4' },
+}
+
+function StatusBadge({ status }) {
+  const s = statusStyle[status] || statusStyle.aguardando
+  return (
+    <span className="text-[12px] font-bold py-[4px] px-[10px] rounded-[14px]" style={{ color: s.color, background: s.bg }}>
+      {s.label}
+    </span>
+  )
 }
 
 function MobileReproducao() {
@@ -40,12 +49,11 @@ function MobileReproducao() {
       <div className="flex-1 overflow-auto px-[22px] pb-[8px] flex flex-col gap-[10px]">
         {loading && <div className="text-center text-text-secondary py-[20px]">Carregando…</div>}
         {lista.filter(c => c.status !== 'concluida').map(c => {
-          const s = statusStyle[c.status] || statusStyle.aguardando
           return (
             <div key={c.id} className="bg-white border border-[#eee9df] rounded-[14px] p-[13px_16px]">
               <div className="flex justify-between items-center mb-[5px]">
                 <span className="font-mono text-[16px] font-bold text-primary-dark">{c.brinco}</span>
-                <span className="text-[11.5px] font-extrabold py-[3px] px-[9px] rounded-[14px]" style={{ color: s.color, background: s.bg }}>{s.label}</span>
+                <StatusBadge status={c.status} />
               </div>
               <div className="text-[13px] text-text-secondary font-medium">{c.metodo} · cobertura {fmtDataCurta(c.data_cobertura)} · {c.raca}</div>
             </div>
@@ -99,18 +107,15 @@ function DesktopReproducao() {
           </div>
           <div className="bg-white border border-border rounded-[14px] p-[18px]">
             <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Coberturas recentes</div>
-            {ativas.map((c, i) => {
-              const s = statusStyle[c.status] || statusStyle.aguardando
-              return (
+            {ativas.map((c, i) => (
                 <div key={c.id} className={`flex justify-between items-center py-[12px] ${i < ativas.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
                   <div>
                     <div className="font-mono text-[14.5px] font-bold text-primary-dark">{c.brinco}</div>
                     <div className="text-[12px] text-text-secondary">{c.metodo} · {fmtDataCurta(c.data_cobertura)}</div>
                   </div>
-                  <span className="text-[11.5px] font-bold" style={{ color: s.color }}>{s.label}</span>
+                  <StatusBadge status={c.status} />
                 </div>
-              )
-            })}
+              ))}
             {ativas.length === 0 && <div className="py-[12px] text-center text-text-secondary text-[14px]">Nenhuma cobertura ativa.</div>}
           </div>
         </div>

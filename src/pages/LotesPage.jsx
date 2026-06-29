@@ -79,6 +79,35 @@ function MobileLotes() {
   )
 }
 
+const tipoStyle = {
+  pasto: { label: 'Pasto', color: '#588157', bg: '#e7ece4' },
+  curral: { label: 'Curral', color: '#a9711f', bg: '#f6eed9' },
+  maternidade: { label: 'Maternidade', color: '#8b5cf6', bg: '#f0e7fb' },
+}
+
+function TipoBadge({ tipo }) {
+  const s = tipoStyle[tipo] || { label: tipo || '—', color: '#7c8378', bg: '#eceadf' }
+  return (
+    <span className="text-[12px] font-bold py-[4px] px-[10px] rounded-[14px]" style={{ color: s.color, background: s.bg }}>
+      {s.label}
+    </span>
+  )
+}
+
+function OcupacaoCell({ qtd, capacidade }) {
+  if (!capacidade) return <span className="text-text-secondary text-[13px]">&mdash;</span>
+  const pct = Math.round((qtd / capacidade) * 100)
+  const color = pct >= 85 ? '#b54a2f' : pct >= 65 ? '#c9882a' : '#588157'
+  return (
+    <div className="flex items-center gap-[10px]">
+      <div className="flex-1 h-[8px] bg-segmented-bg rounded-[6px]">
+        <div className="h-full rounded-[6px]" style={{ width: `${Math.min(pct, 100)}%`, background: color }} />
+      </div>
+      <span className="font-mono text-[12px] font-bold shrink-0" style={{ color }}>{qtd}/{capacidade}</span>
+    </div>
+  )
+}
+
 function DesktopLotes() {
   const navigate = useNavigate()
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
@@ -100,37 +129,28 @@ function DesktopLotes() {
       </div>
 
       <div className="flex-1 overflow-auto p-[22px_26px] bg-header-bg">
-        <div className="grid grid-cols-3 gap-[14px]">
+        <div className="bg-white border border-border rounded-[14px] overflow-hidden">
+          <div className="grid grid-cols-[1.2fr_.8fr_.6fr_1.4fr_.8fr] px-[18px] py-[13px] text-[12px] font-bold text-text-secondary uppercase tracking-[.04em] border-b border-[#eee9df]">
+            <span>Nome</span><span>Tipo</span><span>Animais</span><span>Ocupação</span><span>Peso médio</span>
+          </div>
           {(lotes || []).length === 0 && (
-            <div className="col-span-3 text-center text-text-secondary py-[40px] text-[14px]">Nenhum lote cadastrado.</div>
+            <div className="text-center text-text-secondary py-[40px] text-[14px]">Nenhum lote cadastrado.</div>
           )}
           {(lotes || []).map(lote => {
             const qtd = lote.qtd_animais || 0
-            const area = lote.area_ha ? parseFloat(lote.area_ha) : null
+            const pesoMedio = lote.peso_medio ? `${parseFloat(lote.peso_medio).toFixed(0)} kg` : '—'
 
             return (
               <button
                 key={lote.id}
                 onClick={() => navigate(`/lotes/${lote.id}`)}
-                className="bg-white border border-border rounded-[14px] p-[16px] cursor-pointer text-left hover:shadow-card transition-shadow"
+                className="grid grid-cols-[1.2fr_.8fr_.6fr_1.4fr_.8fr] px-[18px] py-[14px] text-[14px] items-center border-b border-[#f0ede4] last:border-b-0 cursor-pointer w-full text-left bg-transparent hover:bg-[#faf9f5] transition-colors"
               >
-                <div className="flex justify-between items-baseline mb-[12px]">
-                  <span className="text-[17px] font-extrabold text-primary-dark">{lote.nome}</span>
-                  <span className="text-[12.5px] text-text-secondary font-semibold">{area ? `${area} ha` : '—'}</span>
-                </div>
-                {lote.capacidade ? (
-                  <OcupacaoBar atual={qtd} capacidade={lote.capacidade} />
-                ) : (
-                  <>
-                    <div className="flex justify-between text-[12.5px] mb-[6px]">
-                      <span className="text-text-secondary font-semibold">Lotação</span>
-                      <span className="font-mono font-bold text-primary">{qtd}</span>
-                    </div>
-                    <div className="h-[8px] bg-segmented-bg rounded-[6px]">
-                      <div className="h-full rounded-[6px] bg-primary" style={{ width: '15%' }} />
-                    </div>
-                  </>
-                )}
+                <span className="font-extrabold text-primary-dark">{lote.nome}</span>
+                <span><TipoBadge tipo={lote.tipo} /></span>
+                <span className="font-mono font-bold text-primary-dark">{qtd}</span>
+                <span><OcupacaoCell qtd={qtd} capacidade={lote.capacidade} /></span>
+                <span className="font-mono font-semibold text-text-body">{pesoMedio}</span>
               </button>
             )
           })}

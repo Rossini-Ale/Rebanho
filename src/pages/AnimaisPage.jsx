@@ -129,7 +129,10 @@ function DesktopAnimais() {
   const filtros = ['Todos', ...(lotes || []).map(l => l.nome), 'Fêmeas', 'Prenhes']
 
   const filtered = animais.filter(a => {
-    if (busca && !a.brinco.includes(busca)) return false
+    if (busca) {
+      const b = busca.toLowerCase()
+      if (!a.brinco.toLowerCase().includes(b) && !(a.raca || '').toLowerCase().includes(b) && !(a.lote || '').toLowerCase().includes(b)) return false
+    }
     if (filtro === 'Fêmeas') return a.sexo === 'Fêmea'
     if (filtro === 'Machos') return a.sexo === 'Macho'
     if (filtro === 'Prenhes') return a.situacao === 'prenhe'
@@ -148,12 +151,12 @@ function DesktopAnimais() {
           <div className="text-[13px] text-text-secondary font-medium">{animais.length} cadastrados · {animais.filter(a => a.situacao === 'ativo').length} ativos</div>
         </div>
         <div className="flex gap-[10px] items-center">
-          <div className="flex items-center gap-[8px] bg-white border border-field-border rounded-sidebar-item py-[9px] px-[16px] w-[190px]">
+          <div className="flex items-center gap-[8px] bg-white border border-field-border rounded-sidebar-item py-[9px] px-[16px] w-[260px]">
             <Search size={14} className="text-text-secondary" />
             <input
               value={busca}
               onChange={e => setBusca(e.target.value)}
-              placeholder="Buscar por brinco…"
+              placeholder="Buscar por brinco, raça ou lote…"
               className="flex-1 border-none outline-none bg-transparent text-[13.5px] font-medium text-primary-dark placeholder:text-text-secondary"
             />
           </div>

@@ -7,6 +7,8 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import SegmentedControl from '../components/ui/SegmentedControl'
+import Toast from '../components/ui/Toast'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
 import { produtosSanitarios } from '../lib/utils'
 import { ChevronLeft } from 'lucide-react'
@@ -74,6 +76,7 @@ function DesktopEvento() {
     produto: produtosSanitarios[0], dose: '',
     data: new Date().toISOString().slice(0, 10), responsavel: JSON.parse(localStorage.getItem('user') || '{}').nome || '',
   })
+  const { toast, showToast, hideToast } = useToast()
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
   const loteObj = (lotes || []).find(l => String(l.id) === form.lote_id)
   const qtd = loteObj?.qtd_animais || 0
@@ -84,10 +87,12 @@ function DesktopEvento() {
       lote_id: form.alvo === 'lote' ? form.lote_id : null,
       produto: form.produto, dose: form.dose, data: form.data, responsavel: form.responsavel,
     })
-    navigate('/sanidade')
+    showToast('Evento registrado!')
+    setTimeout(() => navigate('/sanidade'), 800)
   }
 
   return (
+    <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     <Modal
       title="Evento sanitário"
       subtitle="Registrar vacina, vermífugo ou exame"
@@ -115,6 +120,7 @@ function DesktopEvento() {
       </div>
       <Select label="Responsável" value={form.responsavel} onChange={e => update('responsavel', e.target.value)} options={(usuarios || []).map(u => ({ value: u.nome, label: u.nome }))} className="mb-[4px]" />
     </Modal>
+    </>
   )
 }
 

@@ -6,6 +6,8 @@ import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
+import Toast from '../components/ui/Toast'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
 import { ChevronLeft } from 'lucide-react'
 
@@ -47,6 +49,7 @@ export default function RegistrarPesoPage() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const { data: animais } = useApi(() => api.animais.listar(), [])
   const [salvando, setSalvando] = useState(false)
+  const { toast, showToast, hideToast } = useToast()
   const [form, setForm] = useState({ animalId: searchParams.get('animal') || '', peso: '', data: new Date().toISOString().slice(0, 10), local: '' })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
@@ -58,7 +61,8 @@ export default function RegistrarPesoPage() {
     setSalvando(true)
     try {
       await api.animais.registrarPeso(form.animalId, { peso_kg: parseFloat(form.peso), data: form.data, local: form.local })
-      navigate(`/animais/${form.animalId}`)
+      showToast('Peso registrado!')
+      setTimeout(() => navigate(`/animais/${form.animalId}`), 800)
     } finally { setSalvando(false) }
   }
 
@@ -66,6 +70,7 @@ export default function RegistrarPesoPage() {
 
   if (isDesktop) {
     return (
+      <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       <Modal
         title="Registrar peso"
         footer={
@@ -77,6 +82,7 @@ export default function RegistrarPesoPage() {
       >
         {content}
       </Modal>
+      </>
     )
   }
 

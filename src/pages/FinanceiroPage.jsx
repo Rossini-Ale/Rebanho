@@ -184,14 +184,21 @@ function DesktopFinanceiro() {
           <div className="flex justify-between items-center mb-[14px]">
             <span className="text-[15px] font-extrabold text-primary-dark">Lançamentos recentes</span>
           </div>
-          <div className="grid grid-cols-[1.6fr_1fr_1fr] py-[10px] px-[4px] text-[12px] font-bold text-text-secondary uppercase"><span>Descrição</span><span>Data</span><span className="text-right">Valor</span></div>
-          {lista.slice(0, 4).map(l => (
-            <div key={l.id} className="grid grid-cols-[1.6fr_1fr_1fr] py-[11px] px-[4px] text-[13.5px] border-t border-[#f0ede4] text-text-body items-center">
-              <span className="font-bold text-primary-dark">{l.descricao || l.categoria}</span>
-              <span className="font-mono">{fmtDataCurta(l.data)}</span>
-              <span className={`font-mono font-bold text-right ${parseFloat(l.valor) > 0 ? 'text-primary-medium' : 'text-danger'}`}>{parseFloat(l.valor) > 0 ? '+' : '−'}{fmtMoeda(l.valor)}</span>
-            </div>
-          ))}
+          <div className="grid grid-cols-[1.6fr_0.7fr_0.8fr_1fr] py-[10px] px-[4px] text-[12px] font-bold text-text-secondary uppercase"><span>Descrição</span><span>Tipo</span><span>Data</span><span className="text-right">Valor</span></div>
+          {lista.slice(0, 4).map(l => {
+            const val = parseFloat(l.valor)
+            const isPositive = val > 0
+            const tipoLabel = isPositive ? 'Receita' : (l.tipo === 'compra' ? 'Compra' : 'Custo')
+            const tipoColor = isPositive ? 'text-primary-medium' : 'text-danger'
+            return (
+              <div key={l.id} className="grid grid-cols-[1.6fr_0.7fr_0.8fr_1fr] py-[11px] px-[4px] text-[13.5px] border-t border-[#f0ede4] text-text-body items-center">
+                <span className="font-bold text-primary-dark">{l.descricao || l.categoria}</span>
+                <span className={`text-[12px] font-bold ${tipoColor}`}>{tipoLabel}</span>
+                <span className="font-mono">{fmtDataCurta(l.data)}</span>
+                <span className={`font-mono font-bold text-right ${isPositive ? 'text-primary-medium' : 'text-danger'}`}>{isPositive ? '+' : '−'}{fmtMoeda(l.valor)}</span>
+              </div>
+            )
+          })}
           {lista.length === 0 && (
             <div className="py-[24px] text-center text-text-secondary text-[14px] border-t border-[#f0ede4]">Nenhum lançamento registrado.</div>
           )}

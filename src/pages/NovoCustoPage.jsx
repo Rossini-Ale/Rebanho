@@ -7,6 +7,8 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import SegmentedControl from '../components/ui/SegmentedControl'
+import Toast from '../components/ui/Toast'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
 import { categoriasCusto } from '../lib/utils'
 import { ChevronLeft } from 'lucide-react'
@@ -99,6 +101,7 @@ function DesktopCusto() {
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const { data: catConfigD } = useApi(() => api.configuracoes.buscar('categorias_custo').catch(() => null), [])
   const catListD = catConfigD?.valor || categoriasCusto
+  const { toast, showToast, hideToast } = useToast()
   const [form, setForm] = useState({ escopo: 'lote', lote_id: '', brinco: '', categoria: '', valor: '', data: new Date().toISOString().slice(0, 10), recorrencia: 'unica', descricao: '' })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
   const loteObj = (lotes || []).find(l => String(l.id) === form.lote_id)
@@ -107,12 +110,14 @@ function DesktopCusto() {
   const handleSave = async () => {
     const valorNum = -Math.abs(parseFloat((form.valor || '0').replace(/\D/g, '')))
     await api.financeiro.criar({ escopo: form.escopo, lote_id: form.escopo === 'lote' ? form.lote_id : null, tipo: 'custo', categoria: form.categoria, valor: valorNum, data: form.data, recorrencia: form.recorrencia, descricao: form.descricao })
-    navigate('/financeiro')
+    showToast('Lançamento salvo!')
+    setTimeout(() => navigate('/financeiro'), 800)
   }
 
   const ctaLabel = form.escopo === 'lote' ? `Lançar nos ${qtd}` : form.escopo === 'animal' ? 'Salvar no animal' : 'Salvar custo'
 
   return (
+    <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     <Modal
       title="Novo lançamento"
       footer={
@@ -124,6 +129,7 @@ function DesktopCusto() {
     >
       <CustoForm form={form} update={update} lotes={lotes} qtdAnimaisLote={qtd} categoriasOpts={catListD} />
     </Modal>
+    </>
   )
 }
 

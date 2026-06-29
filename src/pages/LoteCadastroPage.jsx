@@ -5,6 +5,8 @@ import Modal from '../components/ui/Modal'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import SegmentedControl from '../components/ui/SegmentedControl'
+import Toast from '../components/ui/Toast'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
 import { ChevronLeft } from 'lucide-react'
 
@@ -93,6 +95,7 @@ function DesktopCadastro() {
   const [form, setForm] = useState({ nome: '', tipo: 'pasto', area: '', capacidade: '' })
   const [salvandoD, setSalvandoD] = useState(false)
   const [erroD, setErroD] = useState('')
+  const { toast, showToast, hideToast } = useToast()
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const handleCriarD = async () => {
@@ -101,13 +104,15 @@ function DesktopCadastro() {
     setErroD('')
     try {
       await api.lotes.criar({ nome: form.nome, tipo: form.tipo, area_ha: form.area || null, capacidade: form.capacidade || null })
-      navigate('/lotes')
+      showToast('Lote criado com sucesso!')
+      setTimeout(() => navigate('/lotes'), 800)
     } catch (err) {
       setErroD(err.message || 'Erro ao criar lote')
     } finally { setSalvandoD(false) }
   }
 
   return (
+    <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     <Modal
       title="Novo lote"
       footer={
@@ -161,6 +166,7 @@ function DesktopCadastro() {
       </div>
       {erroD && <div className="text-danger text-[13px] font-semibold mt-[8px]">{erroD}</div>}
     </Modal>
+    </>
   )
 }
 

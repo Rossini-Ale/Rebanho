@@ -122,11 +122,25 @@ function getPeriodoLabel(value) {
   return buildPeriodos().find(p => p.value === value)?.label || value
 }
 
+function parsePeriodo(periodo) {
+  if (!periodo || periodo === 'tudo' || periodo === 'ultimos30' || periodo === 'ultimos90') return {}
+  const mesMatch = periodo.match(/^mes-(\d+)-(\d+)$/)
+  if (mesMatch) return { mes: parseInt(mesMatch[2]), ano: parseInt(mesMatch[1]) }
+  const qMatch = periodo.match(/^q[1-4]-(\d+)$/)
+  if (qMatch) return { ano: parseInt(qMatch[1]) }
+  const sMatch = periodo.match(/^s[12]-(\d+)$/)
+  if (sMatch) return { ano: parseInt(sMatch[1]) }
+  const anoMatch = periodo.match(/^ano-(\d+)$/)
+  if (anoMatch) return { ano: parseInt(anoMatch[1]) }
+  return {}
+}
+
 function DesktopRelatorios() {
   const [periodo, setPeriodo] = useState('tudo')
   const [loteFiltro, setLoteFiltro] = useState('todos')
+  const params = parsePeriodo(periodo)
   const { data: lotesData } = useApi(() => api.lotes.listar(), [])
-  const { data: resumo } = useApi(() => api.financeiro.resumo(), [])
+  const { data: resumo } = useApi(() => api.financeiro.resumo(params), [periodo])
   const { data: resultadoPorLote } = useApi(() => api.financeiro.porLote(), [])
   const { data: mensalDesktop } = useApi(() => api.dashboard.mensal(), [])
   const rec = resumo ? parseFloat(resumo.receita) : 0

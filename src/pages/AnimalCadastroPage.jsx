@@ -6,7 +6,9 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import SegmentedControl from '../components/ui/SegmentedControl'
+import Toast from '../components/ui/Toast'
 import useApi from '../hooks/useApi'
+import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
 import { racas } from '../lib/utils'
 import { ChevronLeft } from 'lucide-react'
@@ -115,6 +117,7 @@ function DesktopCadastro() {
   const { data: racasConfigD } = useApi(() => api.configuracoes.buscar('racas').catch(() => null), [])
   const racasListD = racasConfigD?.valor || racas
   const [salvando, setSalvando] = useState(false)
+  const { toast, showToast, hideToast } = useToast()
   const [form, setForm] = useState({
     brinco: '',
     sexo: 'femea',
@@ -137,11 +140,13 @@ function DesktopCadastro() {
         origem: form.origem,
         lote_id: form.lote_id || null,
       })
-      navigate('/animais')
+      showToast('Animal cadastrado com sucesso!')
+      setTimeout(() => navigate('/animais'), 800)
     } finally { setSalvando(false) }
   }
 
   return (
+    <>{toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     <Modal
       title="Novo animal"
       subtitle="Preencha os dados do animal"
@@ -213,6 +218,7 @@ function DesktopCadastro() {
         className="mb-[4px]"
       />
     </Modal>
+    </>
   )
 }
 

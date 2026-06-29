@@ -8,6 +8,7 @@ import {
   Heart,
   Wallet,
   BarChart3,
+  Bell,
   LogOut,
   Settings,
   Copy,
@@ -23,6 +24,7 @@ const menuItems = [
   { to: '/reproducao', label: 'Reprodução', icon: Heart },
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+  { to: '/notificacoes', label: 'Notificações', icon: Bell },
 ]
 
 export default function Sidebar() {
@@ -57,7 +59,9 @@ export default function Sidebar() {
   return (
     <aside className="w-[215px] bg-primary-dark flex flex-col py-[22px] px-[16px] shrink-0">
       <div className="flex items-center gap-[10px] mb-[30px] px-[8px]">
-        <span className="w-[30px] h-[30px] rounded-[9px] bg-primary-medium inline-block" />
+        <span className="w-[30px] h-[30px] rounded-[9px] bg-primary-medium flex items-center justify-center">
+          <Beef size={18} className="text-white" />
+        </span>
         <div>
           <div className="text-[18px] font-extrabold text-white tracking-[-0.01em] leading-tight">Rebanho</div>
           {user.fazenda_nome && <div className="text-[11px] text-sidebar-inactive font-medium">{user.fazenda_nome}</div>}
