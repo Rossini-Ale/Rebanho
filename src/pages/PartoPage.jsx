@@ -46,6 +46,9 @@ function MobileParto() {
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const handleSave = async () => {
+    if (!form.maeId) { alert('Selecione a mãe'); return }
+    if (!form.dataParto) { alert('Informe a data do parto'); return }
+    if (form.situacao === 'vivo' && !form.brincoBezerro.trim()) { alert('Informe o brinco do bezerro'); return }
     await api.reproducao.parto({ femea_id: form.maeId, data_parto: form.dataParto, bezerro_situacao: form.situacao, bezerro_sexo: form.sexoBezerro, bezerro_peso: form.pesoBezerro, bezerro_brinco: form.brincoBezerro })
     navigate('/reproducao')
   }
@@ -71,6 +74,9 @@ function DesktopParto() {
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const handleSave = async () => {
+    if (!form.maeId) { showToast('Selecione a mãe', 'error'); return }
+    if (!form.dataParto) { showToast('Informe a data do parto', 'error'); return }
+    if (form.situacao === 'vivo' && !form.brincoBezerro.trim()) { showToast('Informe o brinco do bezerro', 'error'); return }
     try {
       await api.reproducao.parto({ femea_id: form.maeId, data_parto: form.dataParto, bezerro_situacao: form.situacao, bezerro_sexo: form.sexoBezerro, bezerro_peso: form.pesoBezerro, bezerro_brinco: form.brincoBezerro })
       showToast('Parto registrado com sucesso!')

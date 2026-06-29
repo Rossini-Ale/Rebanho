@@ -60,7 +60,8 @@ export default function MoverLotePage() {
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const handleSave = async () => {
-    if (!form.animalId || !form.loteDestinoId) return
+    if (!form.animalId) { showToast('Selecione o animal', 'error'); return }
+    if (!form.loteDestinoId) { showToast('Selecione o lote de destino', 'error'); return }
     setSalvando(true)
     try {
       await api.animais.mover(form.animalId, { lote_destino_id: form.loteDestinoId, motivo: form.motivo, data: form.data })

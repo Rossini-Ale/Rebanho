@@ -98,7 +98,11 @@ function MobileLancamento() {
   const isReceita = form.natureza === 'receita'
 
   const handleSave = async () => {
+    if (!form.categoria) { alert('Selecione a categoria'); return }
     const raw = parseFloat((form.valor || '0').replace(/\D/g, ''))
+    if (!raw || raw <= 0) { alert('Informe um valor válido'); return }
+    if (!form.data) { alert('Informe a data'); return }
+    if (form.escopo === 'lote' && !form.lote_id) { alert('Selecione o lote'); return }
     const valorNum = isReceita ? Math.abs(raw) : -Math.abs(raw)
     await api.financeiro.criar({
       escopo: form.escopo, lote_id: form.escopo === 'lote' ? form.lote_id : null,
@@ -141,8 +145,12 @@ function DesktopLancamento() {
   const isReceita = form.natureza === 'receita'
 
   const handleSave = async () => {
+    if (!form.categoria) { showToast('Selecione a categoria', 'error'); return }
+    const raw = parseFloat((form.valor || '0').replace(/\D/g, ''))
+    if (!raw || raw <= 0) { showToast('Informe um valor válido', 'error'); return }
+    if (!form.data) { showToast('Informe a data', 'error'); return }
+    if (form.escopo === 'lote' && !form.lote_id) { showToast('Selecione o lote', 'error'); return }
     try {
-      const raw = parseFloat((form.valor || '0').replace(/\D/g, ''))
       const valorNum = isReceita ? Math.abs(raw) : -Math.abs(raw)
       await api.financeiro.criar({
         escopo: form.escopo, lote_id: form.escopo === 'lote' ? form.lote_id : null,

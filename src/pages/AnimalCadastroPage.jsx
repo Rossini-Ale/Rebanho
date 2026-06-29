@@ -18,6 +18,7 @@ function MobileCadastro() {
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const { data: racasConfig } = useApi(() => api.configuracoes.buscar('racas').catch(() => null), [])
   const racasList = racasConfig?.valor || racas
+  const [erro, setErro] = useState('')
   const [form, setForm] = useState({
     brinco: '',
     sexo: 'femea',
@@ -27,9 +28,10 @@ function MobileCadastro() {
     lote_id: '',
   })
 
-  const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
+  const update = (field, value) => { setForm(f => ({ ...f, [field]: value })); setErro('') }
 
   const handleSave = async () => {
+    if (!form.brinco.trim()) { setErro('Informe o brinco do animal'); return }
     await api.animais.criar({
       brinco: form.brinco,
       sexo: form.sexo === 'femea' ? 'Fêmea' : 'Macho',
@@ -102,6 +104,7 @@ function MobileCadastro() {
           options={(lotes || []).map(l => ({ value: String(l.id), label: l.nome }))}
           className="mb-[8px]"
         />
+        {erro && <div className="text-danger text-[13px] font-semibold mt-[8px]">{erro}</div>}
       </div>
 
       <div className="px-[20px] py-[12px] pb-[24px] bg-bg">
@@ -130,6 +133,7 @@ function DesktopCadastro() {
   const update = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
   const handleSave = async () => {
+    if (!form.brinco.trim()) { showToast('Informe o brinco do animal', 'error'); return }
     setSalvando(true)
     try {
       await api.animais.criar({

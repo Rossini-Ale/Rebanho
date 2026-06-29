@@ -28,6 +28,10 @@ function MobileEvento() {
   const qtd = loteObj?.qtd_animais || 0
 
   const handleSave = async () => {
+    if (form.alvo === 'lote' && !form.lote_id) { alert('Selecione o lote'); return }
+    if (form.alvo === 'animal' && !form.brinco) { alert('Informe o brinco do animal'); return }
+    if (!form.produto) { alert('Selecione o produto'); return }
+    if (!form.data) { alert('Informe a data'); return }
     await api.sanidade.criar({
       tipo: form.tipo, aplicado_em: form.alvo,
       lote_id: form.alvo === 'lote' ? form.lote_id : null,
@@ -82,6 +86,9 @@ function DesktopEvento() {
   const qtd = loteObj?.qtd_animais || 0
 
   const handleSave = async () => {
+    if (form.alvo === 'lote' && !form.lote_id) { showToast('Selecione o lote', 'error'); return }
+    if (!form.produto) { showToast('Selecione o produto', 'error'); return }
+    if (!form.data) { showToast('Informe a data', 'error'); return }
     try {
       await api.sanidade.criar({
         tipo: form.tipo, aplicado_em: form.alvo,

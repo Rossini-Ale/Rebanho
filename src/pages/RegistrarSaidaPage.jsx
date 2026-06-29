@@ -64,7 +64,9 @@ export default function RegistrarSaidaPage() {
   const { toast, showToast, hideToast } = useToast()
 
   const handleSave = async () => {
-    if (!form.animalId) return
+    if (!form.animalId) { showToast('Selecione o animal', 'error'); return }
+    if (form.tipo === 'venda' && (!form.pesoSaida || parseFloat(form.pesoSaida) <= 0)) { showToast('Informe o peso de saída', 'error'); return }
+    if (form.tipo === 'venda' && (!form.precoArroba || parseFloat(form.precoArroba) <= 0)) { showToast('Informe o preço por arroba', 'error'); return }
     setSalvando(true)
     try {
       const situacao = form.tipo === 'venda' ? 'vendido' : form.tipo === 'morte' ? 'morto' : 'ativo'

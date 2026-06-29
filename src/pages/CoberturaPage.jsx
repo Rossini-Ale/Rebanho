@@ -31,6 +31,8 @@ function MobileCobertura() {
   const prev = calcPrevParto(form.dataCobertura)
 
   const handleSave = async () => {
+    if (!form.femeaId) { alert('Selecione a fêmea'); return }
+    if (!form.dataCobertura) { alert('Informe a data da cobertura'); return }
     await api.reproducao.cobertura({ femea_id: form.femeaId, metodo: form.metodo === 'ia' ? 'IA' : 'monta', touro_info: tourosOpts.find(t => t.value === form.touro)?.label || form.touro, data_cobertura: form.dataCobertura })
     navigate('/reproducao')
   }
@@ -71,6 +73,8 @@ function DesktopCobertura() {
   const prev = calcPrevParto(form.dataCobertura)
 
   const handleSave = async () => {
+    if (!form.femeaId) { showToast('Selecione a fêmea', 'error'); return }
+    if (!form.dataCobertura) { showToast('Informe a data da cobertura', 'error'); return }
     setSalvando(true)
     try {
       await api.reproducao.cobertura({ femea_id: form.femeaId, metodo: form.metodo === 'ia' ? 'IA' : 'monta', touro_info: tourosOptsD.find(t => t.value === form.touro)?.label || form.touro, data_cobertura: form.dataCobertura })

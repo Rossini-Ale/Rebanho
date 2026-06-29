@@ -57,7 +57,9 @@ export default function RegistrarPesoPage() {
   const ultimaPesagem = pesagens?.length ? pesagens[0] : null
 
   const handleSave = async () => {
-    if (!form.animalId || !form.peso) return
+    if (!form.animalId) { showToast('Selecione o animal', 'error'); return }
+    if (!form.peso || parseFloat(form.peso) <= 0) { showToast('Informe um peso válido', 'error'); return }
+    if (!form.data) { showToast('Informe a data da pesagem', 'error'); return }
     setSalvando(true)
     try {
       await api.animais.registrarPeso(form.animalId, { peso_kg: parseFloat(form.peso), data: form.data, local: form.local })
