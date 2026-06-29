@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 
@@ -16,16 +17,25 @@ export default function Modal({ title, subtitle, children, footer, onClose, widt
     }
   }, [])
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-[24px]"
       style={{ animation: 'modalFadeIn 0.2s ease-out' }}
     >
-      <div className="absolute inset-0 bg-[rgba(15,22,16,0.55)] backdrop-blur-[2px]" onClick={close} />
+      <div
+        className="absolute inset-0 bg-[rgba(15,22,16,0.25)]"
+        style={{ backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+        onClick={close}
+      />
 
       <div
-        className="relative bg-bg rounded-[20px] shadow-[0_32px_80px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)] overflow-hidden flex flex-col"
-        style={{ width, maxHeight: 'min(88vh, 720px)', animation: 'modalSlideUp 0.25s ease-out' }}
+        className="relative bg-bg rounded-[20px] overflow-hidden flex flex-col"
+        style={{
+          width,
+          maxHeight: 'min(88vh, 720px)',
+          animation: 'modalSlideUp 0.25s ease-out',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.18), 0 8px 24px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06)',
+        }}
       >
         <div className="flex justify-between items-center py-[18px] px-[24px] border-b border-border bg-white">
           <div>
@@ -61,6 +71,7 @@ export default function Modal({ title, subtitle, children, footer, onClose, widt
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body,
   )
 }
