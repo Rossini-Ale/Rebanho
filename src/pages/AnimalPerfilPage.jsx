@@ -5,7 +5,7 @@ import useApi from '../hooks/useApi'
 import Button from '../components/ui/Button'
 import { api } from '../lib/api'
 import { calcularIdade, fmtDataCurta, fmtMoeda } from '../lib/utils'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Scale, ArrowRightLeft, LogOut } from 'lucide-react'
 
 const statusStyle = {
   parto_proximo: { label: 'Parto próximo', color: '#a9711f', bg: '#f6eed9' },
@@ -263,6 +263,18 @@ function DesktopPerfil({ animal, eventos, pesagens }) {
                   <span className={`text-[13.5px] font-bold text-primary-dark ${item.mono ? 'font-mono' : ''}`}>{item.value}</span>
                 </div>
               ))}
+            </div>
+
+            <div className="flex gap-[8px] mt-[14px]">
+              <button onClick={() => navigate(`/registrar-peso?animal=${animal.id}`)} className="flex items-center gap-[6px] bg-white border border-field-border rounded-sidebar-item py-[8px] px-[14px] text-[13px] font-semibold text-primary-dark cursor-pointer hover:bg-chip-bg transition-colors">
+                <Scale size={15} /> Registrar peso
+              </button>
+              <button onClick={() => navigate(`/mover-lote?animal=${animal.id}`)} className="flex items-center gap-[6px] bg-white border border-field-border rounded-sidebar-item py-[8px] px-[14px] text-[13px] font-semibold text-primary-dark cursor-pointer hover:bg-chip-bg transition-colors">
+                <ArrowRightLeft size={15} /> Mover lote
+              </button>
+              <button onClick={() => navigate(`/registrar-saida?animal=${animal.id}`)} className="flex items-center gap-[6px] bg-white border border-field-border rounded-sidebar-item py-[8px] px-[14px] text-[13px] font-semibold text-primary-dark cursor-pointer hover:bg-chip-bg transition-colors">
+                <LogOut size={15} /> Registrar saída
+              </button>
             </div>
           </div>
 

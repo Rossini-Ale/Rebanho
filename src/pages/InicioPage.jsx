@@ -57,6 +57,7 @@ function DesktopInicio() {
   const { data: stats } = useApi(() => api.dashboard.stats(), [])
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
+  const { data: alertas } = useApi(() => api.dashboard.alertas(), [])
   const s = stats || {}
 
   return (
@@ -140,6 +141,21 @@ function DesktopInicio() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-[14px] p-[18px] mt-[14px]">
+          <div className="flex justify-between items-center mb-[14px]">
+            <span className="text-[15px] font-extrabold text-primary-dark">Pendências</span>
+            {(alertas || []).length > 0 && (
+              <span className="text-[12px] font-bold text-danger bg-danger-bg py-[3px] px-[10px] rounded-pill">{(alertas || []).length} alertas</span>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-[10px]">
+            {(alertas || []).slice(0, 6).map((a, i) => <AlertCard key={i} {...a} />)}
+          </div>
+          {(alertas || []).length === 0 && (
+            <div className="text-center text-text-secondary text-[14px] py-[16px]">Nenhuma pendência no momento.</div>
+          )}
         </div>
       </div>
     </>

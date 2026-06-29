@@ -65,19 +65,20 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex flex-col gap-[3px]">
-        {menuItems.map(({ to, label }) => (
+        {menuItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `py-[11px] px-[14px] rounded-sidebar-item text-[14.5px] no-underline transition-colors ${
+              `flex items-center gap-[10px] py-[11px] px-[14px] rounded-sidebar-item text-[14.5px] no-underline transition-colors ${
                 isActive
                   ? 'bg-primary text-white font-bold'
                   : 'text-sidebar-inactive font-semibold hover:text-white'
               }`
             }
           >
+            <Icon size={18} />
             {label}
           </NavLink>
         ))}

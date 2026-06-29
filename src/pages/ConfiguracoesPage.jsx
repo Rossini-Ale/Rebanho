@@ -5,7 +5,7 @@ import useApi from '../hooks/useApi'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import { api } from '../lib/api'
-import { categoriasCusto, produtosSanitarios } from '../lib/utils'
+import { categoriasCusto, produtosSanitarios, racas, touros } from '../lib/utils'
 import { ChevronLeft, Trash2, Plus, Copy, Check, Download } from 'lucide-react'
 
 
@@ -277,6 +277,114 @@ function TabProdutosSanitarios() {
   )
 }
 
+function TabRacas() {
+  const [itens, setItens] = useState(racas)
+  const [novo, setNovo] = useState('')
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    api.configuracoes.buscar('racas')
+      .then(res => { if (res?.valor) setItens(res.valor) })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [])
+
+  const persistir = (updated) => {
+    setItens(updated)
+    api.configuracoes.salvar('racas', updated).catch(() => {})
+  }
+
+  const adicionar = () => {
+    if (novo.trim() && !itens.includes(novo.trim())) {
+      persistir([...itens, novo.trim()])
+      setNovo('')
+    }
+  }
+
+  const remover = (item) => persistir(itens.filter(i => i !== item))
+
+  return (
+    <div className="bg-white border border-border rounded-[14px] p-[18px]">
+      <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Raças</div>
+      <div className="text-[12.5px] text-text-secondary font-medium mb-[14px]">Raças disponíveis ao cadastrar animais.</div>
+
+      <div className="flex gap-[8px] mb-[14px]">
+        <input
+          value={novo}
+          onChange={e => setNovo(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && adicionar()}
+          placeholder="Nova raça..."
+          className="flex-1 bg-white border-[1.5px] border-field-border rounded-button py-[10px] px-[14px] text-[14px] font-semibold text-primary-dark outline-none focus:border-primary"
+        />
+        <Button onClick={adicionar} disabled={!novo.trim()}>Adicionar</Button>
+      </div>
+
+      {itens.map((item, i) => (
+        <div key={item} className={`flex justify-between items-center py-[11px] ${i < itens.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+          <span className="text-[14.5px] font-semibold text-primary-dark">{item}</span>
+          <button onClick={() => remover(item)} className="bg-transparent border-none cursor-pointer text-text-secondary hover:text-danger transition-colors p-[4px]">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TabTouros() {
+  const [itens, setItens] = useState(touros.map(t => typeof t === 'string' ? t : t.label))
+  const [novo, setNovo] = useState('')
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    api.configuracoes.buscar('touros')
+      .then(res => { if (res?.valor) setItens(res.valor) })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [])
+
+  const persistir = (updated) => {
+    setItens(updated)
+    api.configuracoes.salvar('touros', updated).catch(() => {})
+  }
+
+  const adicionar = () => {
+    if (novo.trim() && !itens.includes(novo.trim())) {
+      persistir([...itens, novo.trim()])
+      setNovo('')
+    }
+  }
+
+  const remover = (item) => persistir(itens.filter(i => i !== item))
+
+  return (
+    <div className="bg-white border border-border rounded-[14px] p-[18px]">
+      <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Touros & sêmen</div>
+      <div className="text-[12.5px] text-text-secondary font-medium mb-[14px]">Touros e sêmen disponíveis para cobertura.</div>
+
+      <div className="flex gap-[8px] mb-[14px]">
+        <input
+          value={novo}
+          onChange={e => setNovo(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && adicionar()}
+          placeholder="Novo touro / sêmen..."
+          className="flex-1 bg-white border-[1.5px] border-field-border rounded-button py-[10px] px-[14px] text-[14px] font-semibold text-primary-dark outline-none focus:border-primary"
+        />
+        <Button onClick={adicionar} disabled={!novo.trim()}>Adicionar</Button>
+      </div>
+
+      {itens.map((item, i) => (
+        <div key={item} className={`flex justify-between items-center py-[11px] ${i < itens.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+          <span className="text-[14.5px] font-semibold text-primary-dark">{item}</span>
+          <button onClick={() => remover(item)} className="bg-transparent border-none cursor-pointer text-text-secondary hover:text-danger transition-colors p-[4px]">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function TabUsuarios({ user }) {
   const { data: usuarios, loading, reload } = useApi(() => user.fazenda_id ? api.fazendas.usuarios(user.fazenda_id) : Promise.resolve([]), [])
   const [removendo, setRemovendo] = useState(null)
@@ -476,6 +584,8 @@ function MobileConfiguracoes() {
     { key: 'lotes', label: 'Lotes & pastos' },
     { key: 'custos', label: 'Tipos de custo' },
     { key: 'sanitarios', label: 'Produtos sanitários' },
+    { key: 'racas', label: 'Raças' },
+    { key: 'touros', label: 'Touros / sêmen' },
     { key: 'usuarios', label: 'Usuários' },
     { key: 'unidades', label: 'Unidades' },
     { key: 'sync', label: 'Sincronização' },
@@ -498,6 +608,8 @@ function MobileConfiguracoes() {
           {abaAtiva === 'lotes' && <TabLotes />}
           {abaAtiva === 'custos' && <TabTiposCusto />}
           {abaAtiva === 'sanitarios' && <TabProdutosSanitarios />}
+          {abaAtiva === 'racas' && <TabRacas />}
+          {abaAtiva === 'touros' && <TabTouros />}
           {abaAtiva === 'usuarios' && <TabUsuarios user={user} />}
           {abaAtiva === 'unidades' && <TabUnidades />}
           {abaAtiva === 'sync' && <TabSincronizacao />}
@@ -537,7 +649,7 @@ function MobileConfiguracoes() {
   )
 }
 
-const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', sanitarios: 'Produtos sanitários', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
+const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', sanitarios: 'Produtos sanitários', racas: 'Raças', touros: 'Touros / sêmen', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
 
 function DesktopConfiguracoes() {
   const [searchParams] = useSearchParams()
@@ -555,6 +667,8 @@ function DesktopConfiguracoes() {
     'Lotes & pastos',
     'Tipos de custo',
     'Produtos sanitários',
+    'Raças',
+    'Touros / sêmen',
     'Usuários',
     'Unidades',
     'Sincronização',
@@ -592,6 +706,8 @@ function DesktopConfiguracoes() {
             {abaAtiva === 'Lotes & pastos' && <TabLotes />}
             {abaAtiva === 'Tipos de custo' && <TabTiposCusto />}
             {abaAtiva === 'Produtos sanitários' && <TabProdutosSanitarios />}
+            {abaAtiva === 'Raças' && <TabRacas />}
+            {abaAtiva === 'Touros / sêmen' && <TabTouros />}
             {abaAtiva === 'Usuários' && <TabUsuarios user={user} />}
             {abaAtiva === 'Unidades' && <TabUnidades />}
             {abaAtiva === 'Sincronização' && <TabSincronizacao />}
