@@ -10,6 +10,7 @@ import { fmtMoeda } from '../lib/utils'
 function MobileRelatorios() {
   const [tipo, setTipo] = useState('Financeiro')
   const { data: resumo } = useApi(() => api.financeiro.resumo(), [])
+  const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
   const rec = resumo ? parseFloat(resumo.receita) : 0
   const desp = resumo ? parseFloat(resumo.despesa) : 0
   const res = rec - desp
@@ -21,7 +22,7 @@ function MobileRelatorios() {
         <div className="flex items-center gap-[14px]">
           <span className="text-[19px] font-extrabold text-primary-dark">Relatórios</span>
         </div>
-        <span className="text-[13px] font-bold text-primary bg-chip-bg py-[6px] px-[12px] rounded-chip">Semestre ▾</span>
+        <span className="text-[13px] font-bold text-text-secondary bg-chip-bg py-[6px] px-[12px] rounded-chip">{new Date().getFullYear()}</span>
       </div>
 
       <div className="flex-1 overflow-auto px-[22px] pb-[8px]">
@@ -34,18 +35,37 @@ function MobileRelatorios() {
         <div className="bg-primary rounded-[16px] p-[18px] mb-[14px]">
           <div className="text-[13px] text-accent-light font-semibold">Resultado do semestre</div>
           <div className="font-mono text-[32px] font-bold text-white leading-[1.1]">+{fmtMoeda(res)}</div>
-          <div className="text-[12.5px] text-accent-light font-semibold mt-[3px]">margem {rec ? `${Math.round((res / rec) * 100)}%` : '—'} · jan–jun</div>
+          <div className="text-[12.5px] text-accent-light font-semibold mt-[3px]">margem {rec ? `${Math.round((res / rec) * 100)}%` : '—'} · {new Date().getFullYear()}</div>
         </div>
 
         <div className="bg-white border border-[#eee9df] rounded-[14px] p-[16px] mb-[14px]">
           <div className="text-[13.5px] font-extrabold text-primary-dark mb-[12px]">Receita × Despesa</div>
-          <svg viewBox="0 0 290 130" className="w-full h-[130px]">
-            <line x1="6" y1="110" x2="284" y2="110" stroke="#cfd4c7" strokeWidth="1.5" />
-            {[{ x: 20, h1: 38, h2: 18 }, { x: 66, h1: 32, h2: 15 }, { x: 112, h1: 52, h2: 22 }, { x: 158, h1: 45, h2: 18 }, { x: 204, h1: 66, h2: 25 }, { x: 250, h1: 90, h2: 25 }].map((b, i) => (
-              <g key={i}><rect x={b.x} y={110 - b.h1} width="11" height={b.h1} rx="2" fill={i === 5 ? '#588157' : '#3a5a40'} /><rect x={b.x + 13} y={110 - b.h2} width="11" height={b.h2} rx="2" fill="#b54a2f" /></g>
-            ))}
-          </svg>
-          <div className="flex gap-[16px] text-[11.5px] font-semibold mt-[6px]"><span className="text-primary">■ Receita</span><span className="text-danger">■ Despesa</span></div>
+          {(() => {
+            const dados = (mensal || []).filter(m => m.receita > 0 || m.despesa > 0)
+            if (dados.length === 0) {
+              return <div className="flex items-center justify-center h-[130px] text-text-secondary text-[13px] font-medium">Sem dados suficientes</div>
+            }
+            const maxVal = Math.max(...dados.map(d => Math.max(d.receita, d.despesa))) || 1
+            return (
+              <>
+                <svg viewBox="0 0 290 130" className="w-full h-[130px]">
+                  <line x1="6" y1="110" x2="284" y2="110" stroke="#cfd4c7" strokeWidth="1.5" />
+                  {dados.map((d, i) => {
+                    const x = 20 + i * (250 / dados.length)
+                    const h1 = Math.round((d.receita / maxVal) * 85)
+                    const h2 = Math.round((d.despesa / maxVal) * 85)
+                    return (
+                      <g key={i}>
+                        <rect x={x} y={110 - h1} width="11" height={h1} rx="2" fill={i === dados.length - 1 ? '#588157' : '#3a5a40'} />
+                        <rect x={x + 13} y={110 - h2} width="11" height={h2} rx="2" fill="#b54a2f" />
+                      </g>
+                    )
+                  })}
+                </svg>
+                <div className="flex gap-[16px] text-[11.5px] font-semibold mt-[6px]"><span className="text-primary">■ Receita</span><span className="text-danger">■ Despesa</span></div>
+              </>
+            )
+          })()}
         </div>
 
         <div className="text-[13px] font-extrabold text-text-secondary uppercase tracking-[.04em] mb-[8px]">Por categoria</div>
@@ -63,7 +83,7 @@ function MobileRelatorios() {
         </div>
       </div>
 
-      <div className="px-[22px] py-[10px] pb-[24px]"><Button fullWidth>Exportar PDF</Button></div>
+      <div className="px-[22px] py-[10px] pb-[24px]"><Button fullWidth onClick={() => window.print()}>Exportar PDF</Button></div>
     </div>
   )
 }
@@ -108,6 +128,7 @@ function DesktopRelatorios() {
   const { data: lotesData } = useApi(() => api.lotes.listar(), [])
   const { data: resumo } = useApi(() => api.financeiro.resumo(), [])
   const { data: resultadoPorLote } = useApi(() => api.financeiro.porLote(), [])
+  const { data: mensalDesktop } = useApi(() => api.dashboard.mensal(), [])
   const rec = resumo ? parseFloat(resumo.receita) : 0
   const desp = resumo ? parseFloat(resumo.despesa) : 0
   const res = rec - desp
@@ -126,8 +147,8 @@ function DesktopRelatorios() {
           <div className="text-[13px] text-text-secondary font-medium">Financeiro · {getPeriodoLabel(periodo)}</div>
         </div>
         <div className="flex gap-[10px] items-center">
-          <button className="bg-white border-[1.5px] border-[#cfd4c7] text-primary rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer">Exportar PDF</button>
-          <button className="bg-primary text-white rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer border-none">Exportar Excel</button>
+          <button onClick={() => window.print()} className="bg-white border-[1.5px] border-[#cfd4c7] text-primary rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer">Exportar PDF</button>
+          <button className="bg-primary text-white rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer border-none opacity-50" disabled>Exportar Excel</button>
         </div>
       </div>
 
@@ -150,22 +171,44 @@ function DesktopRelatorios() {
         </div>
 
         <div className="bg-white border border-border rounded-[14px] p-[18px] mb-[16px]">
-          <div className="flex justify-between items-center mb-[6px]">
-            <span className="text-[15px] font-extrabold text-primary-dark">Receita × Despesa por mês</span>
-            <div className="flex gap-[16px] text-[12px] font-semibold"><span className="text-primary">■ Receita</span><span className="text-danger">■ Despesa</span></div>
-          </div>
-          <svg viewBox="0 0 560 210" className="w-full h-[210px]">
-            <line x1="46" y1="180" x2="548" y2="180" stroke="#cfd4c7" strokeWidth="1.5" />
-            <line x1="46" y1="140" x2="548" y2="140" stroke="#f0ede4" /><text x="20" y="144" fontFamily="Spline Sans Mono" fontSize="10" fill="#9aa295">30k</text>
-            <line x1="46" y1="100" x2="548" y2="100" stroke="#f0ede4" /><text x="20" y="104" fontFamily="Spline Sans Mono" fontSize="10" fill="#9aa295">60k</text>
-            <line x1="46" y1="60" x2="548" y2="60" stroke="#f0ede4" /><text x="20" y="64" fontFamily="Spline Sans Mono" fontSize="10" fill="#9aa295">90k</text>
-            {[{ x: 70, h1: 53, h2: 29 }, { x: 150, h1: 47, h2: 24 }, { x: 230, h1: 73, h2: 33 }, { x: 310, h1: 64, h2: 27 }, { x: 390, h1: 93, h2: 37 }, { x: 470, h1: 149, h2: 37 }].map((b, i) => (
-              <g key={i}><rect x={b.x} y={180 - b.h1} width="15" height={b.h1} rx="2" fill={i === 5 ? '#588157' : '#3a5a40'} /><rect x={b.x + 18} y={180 - b.h2} width="15" height={b.h2} rx="2" fill="#b54a2f" /></g>
-            ))}
-            {['jan', 'fev', 'mar', 'abr', 'mai', 'jun'].map((m, i) => (
-              <text key={m} x={78 + i * 80} y="196" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295">{m}</text>
-            ))}
-          </svg>
+          {(() => {
+            const dados = (mensalDesktop || []).filter(m => m.receita > 0 || m.despesa > 0)
+            if (dados.length === 0) {
+              return (
+                <>
+                  <div className="flex justify-between items-center mb-[6px]">
+                    <span className="text-[15px] font-extrabold text-primary-dark">Receita × Despesa por mês</span>
+                  </div>
+                  <div className="flex items-center justify-center h-[210px] text-text-secondary text-[14px] font-medium">Sem dados suficientes</div>
+                </>
+              )
+            }
+            const maxVal = Math.max(...dados.map(d => Math.max(d.receita, d.despesa))) || 1
+            const barW = Math.min(15, Math.floor(460 / dados.length / 2.5))
+            return (
+              <>
+                <div className="flex justify-between items-center mb-[6px]">
+                  <span className="text-[15px] font-extrabold text-primary-dark">Receita × Despesa por mês</span>
+                  <div className="flex gap-[16px] text-[12px] font-semibold"><span className="text-primary">■ Receita</span><span className="text-danger">■ Despesa</span></div>
+                </div>
+                <svg viewBox="0 0 560 210" className="w-full h-[210px]">
+                  <line x1="46" y1="180" x2="548" y2="180" stroke="#cfd4c7" strokeWidth="1.5" />
+                  {dados.map((d, i) => {
+                    const x = 70 + i * (480 / dados.length)
+                    const h1 = Math.round((d.receita / maxVal) * 140)
+                    const h2 = Math.round((d.despesa / maxVal) * 140)
+                    return (
+                      <g key={i}>
+                        <rect x={x} y={180 - h1} width={barW} height={h1} rx="2" fill={i === dados.length - 1 ? '#588157' : '#3a5a40'} />
+                        <rect x={x + barW + 3} y={180 - h2} width={barW} height={h2} rx="2" fill="#b54a2f" />
+                        <text x={x + barW / 2} y="196" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295" textAnchor="middle">{d.nome}</text>
+                      </g>
+                    )
+                  })}
+                </svg>
+              </>
+            )
+          })()}
         </div>
 
         <div className="grid grid-cols-[1.5fr_1fr] gap-[14px]">

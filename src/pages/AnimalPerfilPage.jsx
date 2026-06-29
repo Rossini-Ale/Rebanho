@@ -26,7 +26,7 @@ function MobilePerfil({ animal, eventos }) {
           <ChevronLeft size={24} />
         </button>
         <span className="text-[15px] font-bold text-primary-dark">Animal</span>
-        <button className="text-[14px] font-bold text-primary bg-transparent border-none cursor-pointer">Editar</button>
+        <span className="w-[40px]" />
       </div>
 
       <div className="flex-1 overflow-auto">

@@ -46,7 +46,7 @@ export default function RegistrarPesoPage() {
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const { data: animais } = useApi(() => api.animais.listar(), [])
   const [salvando, setSalvando] = useState(false)
-  const [form, setForm] = useState({ animalId: searchParams.get('animal') || '', peso: '', data: new Date().toISOString().slice(0, 10), local: 'Curral' })
+  const [form, setForm] = useState({ animalId: searchParams.get('animal') || '', peso: '', data: new Date().toISOString().slice(0, 10), local: '' })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const { data: pesagens } = useApi(() => form.animalId ? api.animais.pesagens(form.animalId) : Promise.resolve([]), [form.animalId])

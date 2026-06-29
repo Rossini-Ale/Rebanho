@@ -127,7 +127,7 @@ export default function CadastroPage() {
             <div className="text-[34px] font-extrabold text-white leading-[1.15] tracking-[-0.02em]">Gerencie sua<br />fazenda com<br />facilidade.</div>
             <div className="text-[15px] text-sidebar-inactive font-medium mt-[14px] max-w-[380px]">Crie sua conta e tenha acesso completo ao controle do rebanho, sanidade, reprodução e finanças.</div>
           </div>
-          <div className="text-[13px] text-[#7e8f7a] font-semibold">Rebanho · v1.0</div>
+          <div className="text-[13px] text-[#7e8f7a] font-semibold">Rebanho · Gestão pecuária</div>
         </div>
         <div className="w-[470px] bg-bg flex flex-col justify-center p-[48px] overflow-auto">
           <div className="text-[24px] font-extrabold text-primary-dark mb-[6px]">Criar conta</div>

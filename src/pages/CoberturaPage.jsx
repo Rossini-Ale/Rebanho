@@ -21,12 +21,14 @@ function MobileCobertura() {
   const navigate = useNavigate()
   const { data: rawAnimais } = useApi(() => api.animais.listar({ sexo: 'Fêmea' }), [])
   const femeas = rawAnimais || []
-  const [form, setForm] = useState({ femeaId: '', metodo: 'monta', touro: '0631', dataCobertura: new Date().toISOString().slice(0, 10) })
+  const { data: tourosConfig } = useApi(() => api.configuracoes.buscar('touros').catch(() => null), [])
+  const tourosOpts = tourosConfig?.valor || touros
+  const [form, setForm] = useState({ femeaId: '', metodo: 'monta', touro: '', dataCobertura: new Date().toISOString().slice(0, 10) })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
   const prev = calcPrevParto(form.dataCobertura)
 
   const handleSave = async () => {
-    await api.reproducao.cobertura({ femea_id: form.femeaId, metodo: form.metodo === 'ia' ? 'IA' : 'monta', touro_info: touros.find(t => t.value === form.touro)?.label || form.touro, data_cobertura: form.dataCobertura })
+    await api.reproducao.cobertura({ femea_id: form.femeaId, metodo: form.metodo === 'ia' ? 'IA' : 'monta', touro_info: tourosOpts.find(t => t.value === form.touro)?.label || form.touro, data_cobertura: form.dataCobertura })
     navigate('/reproducao')
   }
 
@@ -40,7 +42,7 @@ function MobileCobertura() {
         <Select label="Fêmea" value={form.femeaId} onChange={e => update('femeaId', e.target.value)} options={femeas.map(a => ({ value: String(a.id), label: `${a.brinco} · ${a.raca}` }))} className="mb-[18px]" />
         <div className="text-[12.5px] font-bold text-text-secondary mb-[7px] uppercase tracking-[.04em]">Método</div>
         <SegmentedControl options={[{ value: 'ia', label: 'IA' }, { value: 'monta', label: 'Monta' }]} value={form.metodo} onChange={v => update('metodo', v)} className="mb-[18px]" />
-        <Select label="Touro" value={form.touro} onChange={e => update('touro', e.target.value)} options={touros} className="mb-[18px]" />
+        <Select label="Touro" value={form.touro} onChange={e => update('touro', e.target.value)} options={tourosOpts} className="mb-[18px]" />
         <Input label="Data da cobertura" type="date" value={form.dataCobertura} onChange={e => update('dataCobertura', e.target.value)} className="mb-[18px]" />
         {prev && (
           <div className="bg-primary rounded-[16px] p-[16px_18px] flex justify-between items-center">
@@ -58,14 +60,16 @@ function DesktopCobertura() {
   const { data: rawAnimais } = useApi(() => api.animais.listar({ sexo: 'Fêmea' }), [])
   const femeas = rawAnimais || []
   const [salvando, setSalvando] = useState(false)
-  const [form, setForm] = useState({ femeaId: '', metodo: 'monta', touro: '0631', dataCobertura: new Date().toISOString().slice(0, 10) })
+  const { data: tourosConfigD } = useApi(() => api.configuracoes.buscar('touros').catch(() => null), [])
+  const tourosOptsD = tourosConfigD?.valor || touros
+  const [form, setForm] = useState({ femeaId: '', metodo: 'monta', touro: '', dataCobertura: new Date().toISOString().slice(0, 10) })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
   const prev = calcPrevParto(form.dataCobertura)
 
   const handleSave = async () => {
     setSalvando(true)
     try {
-      await api.reproducao.cobertura({ femea_id: form.femeaId, metodo: form.metodo === 'ia' ? 'IA' : 'monta', touro_info: touros.find(t => t.value === form.touro)?.label || form.touro, data_cobertura: form.dataCobertura })
+      await api.reproducao.cobertura({ femea_id: form.femeaId, metodo: form.metodo === 'ia' ? 'IA' : 'monta', touro_info: tourosOptsD.find(t => t.value === form.touro)?.label || form.touro, data_cobertura: form.dataCobertura })
       navigate('/reproducao')
     } finally { setSalvando(false) }
   }
@@ -86,7 +90,7 @@ function DesktopCobertura() {
               <Select label="Fêmea" value={form.femeaId} onChange={e => update('femeaId', e.target.value)} options={femeas.map(a => ({ value: String(a.id), label: `${a.brinco} · ${a.raca} · ${a.lote_nome || ''}` }))} className="mb-[16px]" />
               <div className="text-[12px] font-bold text-text-secondary mb-[7px] tracking-[.02em] uppercase">Método</div>
               <SegmentedControl options={[{ value: 'ia', label: 'IA' }, { value: 'monta', label: 'Monta' }]} value={form.metodo} onChange={v => update('metodo', v)} className="mb-[16px]" />
-              <Select label="Touro" value={form.touro} onChange={e => update('touro', e.target.value)} options={touros} className="mb-[16px]" />
+              <Select label="Touro" value={form.touro} onChange={e => update('touro', e.target.value)} options={tourosOptsD} className="mb-[16px]" />
               <Input label="Data da cobertura" type="date" value={form.dataCobertura} onChange={e => update('dataCobertura', e.target.value)} className="mb-[16px]" />
               {prev && (
                 <div className="bg-primary rounded-[12px] p-[14px_16px] flex justify-between items-center">

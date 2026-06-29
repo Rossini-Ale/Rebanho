@@ -6,6 +6,7 @@ import { api } from '../lib/api'
 import { fmtMoeda, fmtDataCurta } from '../lib/utils'
 import { ChevronLeft, Download } from 'lucide-react'
 
+const mesesAbrev = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
 const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
 const mesAtual = meses[new Date().getMonth()]
 const anoAtual = new Date().getFullYear()
@@ -78,6 +79,7 @@ function DesktopFinanceiro() {
   const navigate = useNavigate()
   const { data: lancamentos } = useApi(() => api.financeiro.listar(), [])
   const { data: resumo } = useApi(() => api.financeiro.resumo(), [])
+  const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
   const lista = lancamentos || []
   const rec = resumo ? parseFloat(resumo.receita) : 0
   const desp = resumo ? parseFloat(resumo.despesa) : 0
@@ -114,23 +116,50 @@ function DesktopFinanceiro() {
         <div className="grid grid-cols-4 gap-[14px] mb-[16px]">
           <KPITile label="Receita" value={fmtMoeda(rec)} subtitle={mesAtual} />
           <KPITile label="Despesa" value={fmtMoeda(desp)} subtitle={mesAtual} />
-          <KPITile label="Resultado" value={`+${fmtMoeda(res)}`} subtitle="+12% mês" />
-          <KPITile label="Margem" value={rec ? `${Math.round((res / rec) * 100)}%` : '—'} subtitle="acum. 2026" variant="primary" />
+          <KPITile label="Resultado" value={`+${fmtMoeda(res)}`} subtitle={mesAtual} />
+          <KPITile label="Margem" value={rec ? `${Math.round((res / rec) * 100)}%` : '—'} subtitle={`acum. ${new Date().getFullYear()}`} variant="primary" />
         </div>
 
         <div className="grid grid-cols-[1.5fr_1fr] gap-[14px]">
           <div className="bg-white border border-border rounded-[14px] p-[18px]">
-            <div className="flex justify-between items-center mb-[14px]">
-              <span className="text-[15px] font-extrabold text-primary-dark">Receita × Despesa</span>
-              <span className="text-[12px] text-text-secondary font-semibold">jan – jun</span>
-            </div>
-            <svg viewBox="0 0 560 180" className="w-full h-[180px]">
-              <line x1="40" y1="150" x2="548" y2="150" stroke="#cfd4c7" strokeWidth="1.5" />
-              {[{ x: 64, h1: 50, h2: 24 }, { x: 144, h1: 44, h2: 20 }, { x: 224, h1: 66, h2: 28 }, { x: 304, h1: 58, h2: 22 }, { x: 384, h1: 84, h2: 32 }, { x: 464, h1: 106, h2: 30 }].map((b, i) => (
-                <g key={i}><rect x={b.x} y={150 - b.h1} width="15" height={b.h1} rx="2" fill={i === 5 ? '#588157' : '#3a5a40'} /><rect x={b.x + 18} y={150 - b.h2} width="15" height={b.h2} rx="2" fill="#b54a2f" /></g>
-              ))}
-            </svg>
-            <div className="flex gap-[16px] text-[12px] font-semibold mt-[6px]"><span className="text-primary">■ Receita</span><span className="text-danger">■ Despesa</span></div>
+            {(() => {
+              const dados = (mensal || []).filter(m => m.receita > 0 || m.despesa > 0)
+              if (dados.length === 0) {
+                return (
+                  <>
+                    <div className="flex justify-between items-center mb-[14px]">
+                      <span className="text-[15px] font-extrabold text-primary-dark">Receita × Despesa</span>
+                    </div>
+                    <div className="flex items-center justify-center h-[180px] text-text-secondary text-[14px] font-medium">Sem dados suficientes</div>
+                  </>
+                )
+              }
+              const maxVal = Math.max(...dados.map(d => Math.max(d.receita, d.despesa))) || 1
+              const barW = Math.min(15, Math.floor(400 / dados.length / 2.5))
+              return (
+                <>
+                  <div className="flex justify-between items-center mb-[14px]">
+                    <span className="text-[15px] font-extrabold text-primary-dark">Receita × Despesa</span>
+                    <span className="text-[12px] text-text-secondary font-semibold">{dados[0].nome} – {dados[dados.length - 1].nome}</span>
+                  </div>
+                  <svg viewBox="0 0 560 180" className="w-full h-[180px]">
+                    <line x1="40" y1="150" x2="548" y2="150" stroke="#cfd4c7" strokeWidth="1.5" />
+                    {dados.map((d, i) => {
+                      const x = 64 + i * (500 / dados.length)
+                      const h1 = Math.round((d.receita / maxVal) * 120)
+                      const h2 = Math.round((d.despesa / maxVal) * 120)
+                      return (
+                        <g key={i}>
+                          <rect x={x} y={150 - h1} width={barW} height={h1} rx="2" fill={i === dados.length - 1 ? '#588157' : '#3a5a40'} />
+                          <rect x={x + barW + 3} y={150 - h2} width={barW} height={h2} rx="2" fill="#b54a2f" />
+                        </g>
+                      )
+                    })}
+                  </svg>
+                  <div className="flex gap-[16px] text-[12px] font-semibold mt-[6px]"><span className="text-primary">■ Receita</span><span className="text-danger">■ Despesa</span></div>
+                </>
+              )
+            })()}
           </div>
 
           <div className="bg-white border border-border rounded-[14px] p-[18px]">

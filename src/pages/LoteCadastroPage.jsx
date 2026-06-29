@@ -4,12 +4,27 @@ import useMediaQuery from '../hooks/useMediaQuery'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import SegmentedControl from '../components/ui/SegmentedControl'
+import { api } from '../lib/api'
 import { ChevronLeft } from 'lucide-react'
 
 function MobileCadastro() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ nome: '', tipo: 'pasto', area: '', capacidade: '' })
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
+
+  const handleCriar = async () => {
+    if (!form.nome.trim()) { setErro('Informe o nome do lote'); return }
+    setSalvando(true)
+    setErro('')
+    try {
+      await api.lotes.criar({ nome: form.nome, tipo: form.tipo, area_ha: form.area || null, capacidade: form.capacidade || null })
+      navigate('/lotes')
+    } catch (err) {
+      setErro(err.message || 'Erro ao criar lote')
+    } finally { setSalvando(false) }
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -62,10 +77,11 @@ function MobileCadastro() {
         <div className="bg-[#eef0e9] rounded-button p-[13px_16px] text-[13px] text-text-body font-semibold">
           A capacidade é usada para avisar quando o lote estiver lotado (barra vermelha).
         </div>
+        {erro && <div className="text-danger text-[13px] font-semibold mt-[8px]">{erro}</div>}
       </div>
 
       <div className="px-[20px] py-[12px] pb-[24px] bg-bg">
-        <Button fullWidth onClick={() => navigate('/lotes')}>Criar lote</Button>
+        <Button fullWidth onClick={handleCriar} disabled={salvando}>{salvando ? 'Criando…' : 'Criar lote'}</Button>
       </div>
     </div>
   )
@@ -74,7 +90,21 @@ function MobileCadastro() {
 function DesktopCadastro() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ nome: '', tipo: 'pasto', area: '', capacidade: '' })
+  const [salvandoD, setSalvandoD] = useState(false)
+  const [erroD, setErroD] = useState('')
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
+
+  const handleCriarD = async () => {
+    if (!form.nome.trim()) { setErroD('Informe o nome do lote'); return }
+    setSalvandoD(true)
+    setErroD('')
+    try {
+      await api.lotes.criar({ nome: form.nome, tipo: form.tipo, area_ha: form.area || null, capacidade: form.capacidade || null })
+      navigate('/lotes')
+    } catch (err) {
+      setErroD(err.message || 'Erro ao criar lote')
+    } finally { setSalvandoD(false) }
+  }
 
   return (
     <>
@@ -136,14 +166,16 @@ function DesktopCadastro() {
               <div className="bg-[#eef0e9] rounded-sidebar-item p-[13px_16px] text-[13px] text-text-body font-semibold">
                 A capacidade é usada para avisar quando o lote estiver lotado (barra vermelha).
               </div>
+              {erroD && <div className="text-danger text-[13px] font-semibold mt-[8px]">{erroD}</div>}
             </div>
 
             <div className="py-[13px] px-[22px] border-t border-border bg-white flex gap-[10px] justify-end">
               <Button variant="secondary" onClick={() => navigate(-1)}>Cancelar</Button>
               <button
-                onClick={() => navigate('/lotes')}
-                className="bg-primary text-white rounded-sidebar-item py-[10px] px-[20px] text-[14px] font-extrabold cursor-pointer border-none"
-              >Criar lote</button>
+                disabled={salvandoD}
+                onClick={handleCriarD}
+                className="bg-primary text-white rounded-sidebar-item py-[10px] px-[20px] text-[14px] font-extrabold cursor-pointer border-none disabled:opacity-50"
+              >{salvandoD ? 'Criando…' : 'Criar lote'}</button>
             </div>
           </div>
         </div>

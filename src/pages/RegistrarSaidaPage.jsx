@@ -53,7 +53,7 @@ export default function RegistrarSaidaPage() {
   const { data: animais } = useApi(() => api.animais.listar(), [])
   const [form, setForm] = useState({
     tipo: 'venda', animalId: searchParams.get('animal') || '',
-    pesoSaida: '', precoArroba: '305', comprador: '', observacao: '',
+    pesoSaida: '', precoArroba: '', comprador: '', observacao: '',
   })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 

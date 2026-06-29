@@ -122,3 +122,12 @@ CREATE TABLE IF NOT EXISTS alertas (
   lido BOOLEAN DEFAULT FALSE,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS configuracoes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fazenda_id INT NOT NULL,
+  chave VARCHAR(50) NOT NULL,
+  valor JSON NOT NULL,
+  UNIQUE KEY uk_fazenda_chave (fazenda_id, chave),
+  FOREIGN KEY (fazenda_id) REFERENCES fazendas(id)
+);

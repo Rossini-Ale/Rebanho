@@ -33,7 +33,7 @@ export default function LoginPage() {
       <Input label="Usuário" value={usuario} onChange={(e) => setUsuario(e.target.value)} className="mb-[16px]" />
       <Input label="Senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} className="mb-[8px]" />
       {erro && <div className="text-danger text-[13px] font-semibold mb-[8px]">{erro}</div>}
-      <div className="text-right text-[13px] font-bold text-primary mb-[22px] cursor-pointer">Esqueci a senha</div>
+      <div className="text-right text-[13px] font-bold text-text-secondary mb-[22px] opacity-50">Esqueci a senha</div>
       <Button type="submit" fullWidth disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</Button>
       <div
         onClick={() => navigate('/cadastro')}
@@ -56,7 +56,7 @@ export default function LoginPage() {
             <div className="text-[34px] font-extrabold text-white leading-[1.15] tracking-[-0.02em]">Toda a fazenda<br />na palma da mão.</div>
             <div className="text-[15px] text-sidebar-inactive font-medium mt-[14px] max-w-[380px]">Rebanho, sanidade, reprodução e finanças num só lugar — funciona offline no campo e sincroniza sozinho.</div>
           </div>
-          <div className="text-[13px] text-[#7e8f7a] font-semibold">Fazenda Santa Rita · v1.0</div>
+          <div className="text-[13px] text-[#7e8f7a] font-semibold">Rebanho · Gestão pecuária</div>
         </div>
         <div className="w-[440px] bg-bg flex flex-col justify-center p-[48px]">
           <div className="text-[24px] font-extrabold text-primary-dark mb-[6px]">Entrar</div>
@@ -73,7 +73,7 @@ export default function LoginPage() {
         <span className="w-[44px] h-[44px] rounded-[13px] bg-primary" />
         <span className="text-[26px] font-extrabold text-primary-dark tracking-[-0.02em]">Rebanho</span>
       </div>
-      <div className="text-[14px] text-text-secondary font-medium mb-[28px]">Gestão da Fazenda Santa Rita</div>
+      <div className="text-[14px] text-text-secondary font-medium mb-[28px]">Gestão inteligente do rebanho</div>
       <form onSubmit={handleLogin}>
         {formFields}
         <div className="text-center text-[13.5px] text-text-secondary font-semibold mt-[14px]">Trabalha offline · sincroniza ao reconectar</div>

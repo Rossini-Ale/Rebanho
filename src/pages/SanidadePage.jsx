@@ -109,7 +109,7 @@ function DesktopSanidade() {
           <div className="text-[13px] text-text-secondary font-medium">Calendário sanitário do rebanho</div>
         </div>
         <div className="flex gap-[10px] items-center">
-          <button className="bg-white border-[1.5px] border-[#cfd4c7] text-primary rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer">Produtos</button>
+          <button onClick={() => navigate('/configuracoes?tab=sanitarios')} className="bg-white border-[1.5px] border-[#cfd4c7] text-primary rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer">Produtos</button>
           <button onClick={() => navigate('/sanidade/novo')} className="bg-primary text-white rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer border-none">+ Registrar evento</button>
         </div>
       </div>
@@ -118,7 +118,7 @@ function DesktopSanidade() {
         <div className="grid grid-cols-3 gap-[14px] mb-[18px]">
           <KPITile label="Vencidas" value={String(vencidas)} subtitle="ação urgente" />
           <KPITile label="Próx. 7 dias" value={String(prox7)} subtitle="agendadas" />
-          <KPITile label="Cobertura vacinal" value="94%" subtitle="do rebanho" variant="primary" />
+          <KPITile label="Total de eventos" value={String(all.length)} subtitle="registrados" variant="primary" />
         </div>
 
         <div className="flex gap-[10px] mb-[14px]">

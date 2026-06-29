@@ -13,6 +13,8 @@ import { ChevronLeft } from 'lucide-react'
 function MobileCadastro() {
   const navigate = useNavigate()
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const { data: racasConfig } = useApi(() => api.configuracoes.buscar('racas').catch(() => null), [])
+  const racasList = racasConfig?.valor || racas
   const [form, setForm] = useState({
     brinco: '',
     sexo: 'femea',
@@ -70,7 +72,7 @@ function MobileCadastro() {
           label="Raça"
           value={form.raca}
           onChange={e => update('raca', e.target.value)}
-          options={racas.map(r => ({ value: r, label: r }))}
+          options={racasList.map(r => ({ value: r, label: r }))}
           className="mb-[18px]"
         />
 
@@ -109,6 +111,8 @@ function MobileCadastro() {
 function DesktopCadastro() {
   const navigate = useNavigate()
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const { data: racasConfigD } = useApi(() => api.configuracoes.buscar('racas').catch(() => null), [])
+  const racasListD = racasConfigD?.valor || racas
   const [salvando, setSalvando] = useState(false)
   const [form, setForm] = useState({
     brinco: '',
@@ -170,7 +174,7 @@ function DesktopCadastro() {
                 label="Raça"
                 value={form.raca}
                 onChange={e => update('raca', e.target.value)}
-                options={racas.map(r => ({ value: r, label: r }))}
+                options={racasListD.map(r => ({ value: r, label: r }))}
                 className="mb-[16px]"
               />
 

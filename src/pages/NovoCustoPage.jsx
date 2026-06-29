@@ -10,7 +10,7 @@ import { api } from '../lib/api'
 import { categoriasCusto } from '../lib/utils'
 import { ChevronLeft } from 'lucide-react'
 
-function CustoForm({ form, update, lotes, qtdAnimaisLote }) {
+function CustoForm({ form, update, lotes, qtdAnimaisLote, categoriasOpts }) {
   const valorNum = parseFloat((form.valor || '0').replace(/\D/g, '')) || 0
   const rateio = form.escopo === 'lote' && valorNum && qtdAnimaisLote > 0 ? Math.round(valorNum / qtdAnimaisLote) : null
 
@@ -27,7 +27,7 @@ function CustoForm({ form, update, lotes, qtdAnimaisLote }) {
         <Input label="Brinco do animal" value={form.brinco} onChange={e => update('brinco', e.target.value)} mono placeholder="0000" className="mb-[18px]" />
       )}
 
-      <Select label="Tipo de custo" value={form.categoria} onChange={e => update('categoria', e.target.value)} options={categoriasCusto.map(c => ({ value: c, label: c }))} className="mb-[18px]" />
+      <Select label="Tipo de custo" value={form.categoria} onChange={e => update('categoria', e.target.value)} options={(categoriasOpts || categoriasCusto).map(c => ({ value: c, label: c }))} className="mb-[18px]" />
 
       <div className="text-[12.5px] font-bold text-text-secondary mb-[7px] uppercase tracking-[.04em]">{form.escopo === 'lote' ? 'Valor total' : 'Valor'}</div>
       <input value={form.valor} onChange={e => update('valor', e.target.value)} placeholder="R$ 0,00" className="w-full bg-white border-[1.5px] border-primary rounded-button py-[14px] px-[16px] font-mono text-[22px] font-bold text-primary-dark outline-none mb-[14px]" />
@@ -66,6 +66,8 @@ function CustoForm({ form, update, lotes, qtdAnimaisLote }) {
 function MobileCusto() {
   const navigate = useNavigate()
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const { data: catConfig } = useApi(() => api.configuracoes.buscar('categorias_custo').catch(() => null), [])
+  const catList = catConfig?.valor || categoriasCusto
   const [form, setForm] = useState({ escopo: 'geral', lote_id: '', brinco: '', categoria: categoriasCusto[0], valor: '', data: new Date().toISOString().slice(0, 10), recorrencia: 'unica', descricao: '' })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
   const loteObj = (lotes || []).find(l => String(l.id) === form.lote_id)
@@ -85,7 +87,7 @@ function MobileCusto() {
         <button onClick={() => navigate(-1)} className="text-primary bg-transparent border-none cursor-pointer p-0"><ChevronLeft size={24} /></button>
         <span className="text-[19px] font-extrabold text-primary-dark">Novo custo</span>
       </div>
-      <div className="flex-1 overflow-auto px-[20px]"><CustoForm form={form} update={update} lotes={lotes} qtdAnimaisLote={qtd} /></div>
+      <div className="flex-1 overflow-auto px-[20px]"><CustoForm form={form} update={update} lotes={lotes} qtdAnimaisLote={qtd} categoriasOpts={catList} /></div>
       <div className="px-[20px] py-[12px] pb-[24px]"><Button fullWidth onClick={handleSave}>{ctaLabel}</Button></div>
     </div>
   )
@@ -94,7 +96,9 @@ function MobileCusto() {
 function DesktopCusto() {
   const navigate = useNavigate()
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
-  const [form, setForm] = useState({ escopo: 'lote', lote_id: '', brinco: '', categoria: 'Ração & suplemento', valor: '1.700', data: new Date().toISOString().slice(0, 10), recorrencia: 'unica', descricao: '' })
+  const { data: catConfigD } = useApi(() => api.configuracoes.buscar('categorias_custo').catch(() => null), [])
+  const catListD = catConfigD?.valor || categoriasCusto
+  const [form, setForm] = useState({ escopo: 'lote', lote_id: '', brinco: '', categoria: '', valor: '', data: new Date().toISOString().slice(0, 10), recorrencia: 'unica', descricao: '' })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
   const loteObj = (lotes || []).find(l => String(l.id) === form.lote_id)
   const qtd = loteObj?.qtd_animais || 0
@@ -119,7 +123,7 @@ function DesktopCusto() {
               <span className="text-[17px] font-extrabold text-primary-dark">Novo custo</span>
               <button onClick={() => navigate(-1)} className="text-[18px] text-text-secondary font-semibold bg-transparent border-none cursor-pointer">✕</button>
             </div>
-            <div className="flex-1 overflow-auto p-[20px_22px]"><CustoForm form={form} update={update} lotes={lotes} qtdAnimaisLote={qtd} /></div>
+            <div className="flex-1 overflow-auto p-[20px_22px]"><CustoForm form={form} update={update} lotes={lotes} qtdAnimaisLote={qtd} categoriasOpts={catListD} /></div>
             <div className="py-[13px] px-[22px] border-t border-border bg-white flex gap-[10px] justify-end">
               <Button variant="secondary" onClick={() => navigate(-1)}>Cancelar</Button>
               <button onClick={handleSave} className="bg-primary text-white rounded-sidebar-item py-[10px] px-[20px] text-[14px] font-extrabold cursor-pointer border-none">{ctaLabel}</button>

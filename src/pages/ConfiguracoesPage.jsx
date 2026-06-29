@@ -172,15 +172,28 @@ function TabLotes() {
 function TabTiposCusto() {
   const [itens, setItens] = useState(categoriasCusto)
   const [novo, setNovo] = useState('')
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    api.configuracoes.buscar('categorias_custo')
+      .then(res => { if (res?.valor) setItens(res.valor) })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [])
+
+  const persistir = (updated) => {
+    setItens(updated)
+    api.configuracoes.salvar('categorias_custo', updated).catch(() => {})
+  }
 
   const adicionar = () => {
     if (novo.trim() && !itens.includes(novo.trim())) {
-      setItens([...itens, novo.trim()])
+      persistir([...itens, novo.trim()])
       setNovo('')
     }
   }
 
-  const remover = (item) => setItens(itens.filter(i => i !== item))
+  const remover = (item) => persistir(itens.filter(i => i !== item))
 
   return (
     <div className="bg-white border border-border rounded-[14px] p-[18px]">
@@ -213,15 +226,28 @@ function TabTiposCusto() {
 function TabProdutosSanitarios() {
   const [itens, setItens] = useState(produtosSanitarios)
   const [novo, setNovo] = useState('')
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    api.configuracoes.buscar('produtos_sanitarios')
+      .then(res => { if (res?.valor) setItens(res.valor) })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [])
+
+  const persistir = (updated) => {
+    setItens(updated)
+    api.configuracoes.salvar('produtos_sanitarios', updated).catch(() => {})
+  }
 
   const adicionar = () => {
     if (novo.trim() && !itens.includes(novo.trim())) {
-      setItens([...itens, novo.trim()])
+      persistir([...itens, novo.trim()])
       setNovo('')
     }
   }
 
-  const remover = (item) => setItens(itens.filter(i => i !== item))
+  const remover = (item) => persistir(itens.filter(i => i !== item))
 
   return (
     <div className="bg-white border border-border rounded-[14px] p-[18px]">
@@ -351,6 +377,18 @@ function TabUnidades() {
 
 function TabSincronizacao() {
   const [syncOn, setSyncOn] = useState(true)
+  const [online, setOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const goOnline = () => setOnline(true)
+    const goOffline = () => setOnline(false)
+    window.addEventListener('online', goOnline)
+    window.addEventListener('offline', goOffline)
+    return () => {
+      window.removeEventListener('online', goOnline)
+      window.removeEventListener('offline', goOffline)
+    }
+  }, [])
 
   return (
     <div className="bg-white border border-border rounded-[14px] p-[18px]">
@@ -371,11 +409,11 @@ function TabSincronizacao() {
       <div className="flex justify-between items-center py-[10px]">
         <div>
           <div className="text-[14.5px] font-bold text-primary-dark">Status</div>
-          <div className="text-[12.5px] text-text-secondary mt-[2px]">Último sync há 4 min</div>
+          <div className="text-[12.5px] text-text-secondary mt-[2px]">Sincronização disponível quando offline</div>
         </div>
         <div className="flex items-center gap-[6px]">
-          <span className="w-[8px] h-[8px] rounded-full bg-primary-medium" />
-          <span className="text-[13px] font-bold text-primary-medium">Online</span>
+          <span className="w-[8px] h-[8px] rounded-full" style={{ background: online ? '#588157' : '#b54a2f' }} />
+          <span className="text-[13px] font-bold" style={{ color: online ? '#588157' : '#b54a2f' }}>{online ? 'Online' : 'Offline'}</span>
         </div>
       </div>
     </div>

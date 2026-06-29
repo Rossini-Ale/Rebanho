@@ -81,5 +81,11 @@ export const api = {
   dashboard: {
     stats: () => request('/dashboard/stats'),
     alertas: () => request('/dashboard/alertas'),
+    mensal: () => request('/dashboard/mensal'),
+  },
+
+  configuracoes: {
+    buscar: (chave) => request(`/configuracoes/${chave}`),
+    salvar: (chave, valor) => request(`/configuracoes/${chave}`, { method: 'PUT', body: JSON.stringify({ valor }) }),
   },
 }

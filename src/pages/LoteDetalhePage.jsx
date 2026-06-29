@@ -29,7 +29,7 @@ function MobileDetalhe({ lote, animaisDoLote }) {
           <button onClick={() => navigate(-1)} className="text-primary bg-transparent border-none cursor-pointer p-0"><ChevronLeft size={24} /></button>
           <span className="text-[19px] font-extrabold text-primary-dark">{lote.nome}</span>
         </div>
-        <span className="text-[13px] font-bold text-primary cursor-pointer">Editar</span>
+        <span onClick={() => navigate('/configuracoes?tab=lotes')} className="text-[13px] font-bold text-primary cursor-pointer">Editar</span>
       </div>
 
       <div className="flex-1 overflow-auto px-[22px] pb-[8px]">

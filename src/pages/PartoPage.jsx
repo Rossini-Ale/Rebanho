@@ -27,7 +27,7 @@ function FormContent({ form, update, femeas }) {
           </div>
           <Input label="Brinco do bezerro" value={form.brincoBezerro} onChange={e => update('brincoBezerro', e.target.value)} mono placeholder="0000" className="mb-[18px]" />
           <div className="bg-[#eef0e9] rounded-button p-[13px_16px] text-[13px] text-text-body font-semibold">
-            Cria o bezerro <b>{form.brincoBezerro || '____'}</b> já cadastrado, filiado à {mae?.brinco || '____'}, no lote Maternidade.
+            Cria o bezerro <b>{form.brincoBezerro || '____'}</b> já cadastrado, filiado à {mae?.brinco || '____'}, no lote de maternidade (se houver).
           </div>
         </>
       )}
@@ -39,7 +39,7 @@ function MobileParto() {
   const navigate = useNavigate()
   const { data: rawAnimais } = useApi(() => api.animais.listar({ sexo: 'Fêmea' }), [])
   const femeas = rawAnimais || []
-  const [form, setForm] = useState({ maeId: '', dataParto: new Date().toISOString().slice(0, 10), situacao: 'vivo', sexoBezerro: 'Fêmea', pesoBezerro: '32', brincoBezerro: '' })
+  const [form, setForm] = useState({ maeId: '', dataParto: new Date().toISOString().slice(0, 10), situacao: 'vivo', sexoBezerro: 'Fêmea', pesoBezerro: '', brincoBezerro: '' })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const handleSave = async () => {
@@ -63,7 +63,7 @@ function DesktopParto() {
   const navigate = useNavigate()
   const { data: rawAnimais } = useApi(() => api.animais.listar({ sexo: 'Fêmea' }), [])
   const femeas = rawAnimais || []
-  const [form, setForm] = useState({ maeId: '', dataParto: new Date().toISOString().slice(0, 10), situacao: 'vivo', sexoBezerro: 'Fêmea', pesoBezerro: '32', brincoBezerro: '' })
+  const [form, setForm] = useState({ maeId: '', dataParto: new Date().toISOString().slice(0, 10), situacao: 'vivo', sexoBezerro: 'Fêmea', pesoBezerro: '', brincoBezerro: '' })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
 
   const handleSave = async () => {

@@ -13,9 +13,11 @@ import { ChevronLeft } from 'lucide-react'
 function MobileEvento() {
   const navigate = useNavigate()
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const { data: produtosConfig } = useApi(() => api.configuracoes.buscar('produtos_sanitarios').catch(() => null), [])
+  const produtos = produtosConfig?.valor || produtosSanitarios
   const [form, setForm] = useState({
     alvo: 'lote', lote_id: '', brinco: '', tipo: 'vacina',
-    produto: produtosSanitarios[0], dose: '5 ml',
+    produto: produtosSanitarios[0], dose: '',
     data: new Date().toISOString().slice(0, 10),
   })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
@@ -45,7 +47,7 @@ function MobileEvento() {
         {form.alvo === 'animal' && <Input label="Brinco do animal" value={form.brinco} onChange={e => update('brinco', e.target.value)} mono placeholder="0000" className="mb-[18px]" />}
         <div className="text-[12.5px] font-bold text-text-secondary mb-[7px] uppercase tracking-[.04em]">Tipo</div>
         <SegmentedControl options={[{ value: 'vacina', label: 'Vacina' }, { value: 'vermifugo', label: 'Vermíf.' }, { value: 'exame', label: 'Exame' }]} value={form.tipo} onChange={v => update('tipo', v)} className="mb-[18px]" />
-        <Select label="Produto" value={form.produto} onChange={e => update('produto', e.target.value)} options={produtosSanitarios.map(p => ({ value: p, label: p }))} className="mb-[18px]" />
+        <Select label="Produto" value={form.produto} onChange={e => update('produto', e.target.value)} options={produtos.map(p => ({ value: p, label: p }))} className="mb-[18px]" />
         <div className="flex gap-[12px] mb-[18px]">
           <Input label="Dose" value={form.dose} onChange={e => update('dose', e.target.value)} placeholder="5 ml" className="flex-1" />
           <Input label="Data" type="date" value={form.data} onChange={e => update('data', e.target.value)} className="flex-1" />
@@ -62,10 +64,14 @@ function MobileEvento() {
 function DesktopEvento() {
   const navigate = useNavigate()
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const { data: produtosConfigD } = useApi(() => api.configuracoes.buscar('produtos_sanitarios').catch(() => null), [])
+  const produtosD = produtosConfigD?.valor || produtosSanitarios
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const { data: usuarios } = useApi(() => user.fazenda_id ? api.fazendas.usuarios(user.fazenda_id) : Promise.resolve([]), [])
   const [form, setForm] = useState({
     alvo: 'lote', lote_id: '', brinco: '', tipo: 'vacina',
-    produto: produtosSanitarios[0], dose: '5 ml',
-    data: new Date().toISOString().slice(0, 10), responsavel: 'João Carlos',
+    produto: produtosSanitarios[0], dose: '',
+    data: new Date().toISOString().slice(0, 10), responsavel: JSON.parse(localStorage.getItem('user') || '{}').nome || '',
   })
   const update = (f, v) => setForm(s => ({ ...s, [f]: v }))
   const loteObj = (lotes || []).find(l => String(l.id) === form.lote_id)
@@ -102,12 +108,12 @@ function DesktopEvento() {
               <div className="text-[12px] font-bold text-text-secondary mb-[7px] tracking-[.02em] uppercase">Aplicar a</div>
               <SegmentedControl options={[{ value: 'animal', label: 'Animal' }, { value: 'lote', label: 'Lote' }]} value={form.alvo} onChange={v => update('alvo', v)} className="mb-[16px]" />
               {form.alvo === 'lote' && <Select label="Lote" value={form.lote_id} onChange={e => update('lote_id', e.target.value)} options={(lotes || []).map(l => ({ value: String(l.id), label: `${l.nome} · ${l.qtd_animais || 0} animais` }))} className="mb-[16px]" />}
-              <Select label="Produto" value={form.produto} onChange={e => update('produto', e.target.value)} options={produtosSanitarios.map(p => ({ value: p, label: p }))} className="mb-[16px]" />
+              <Select label="Produto" value={form.produto} onChange={e => update('produto', e.target.value)} options={produtosD.map(p => ({ value: p, label: p }))} className="mb-[16px]" />
               <div className="flex gap-[14px]">
                 <Input label="Dose" value={form.dose} onChange={e => update('dose', e.target.value)} className="flex-1 mb-[16px]" />
                 <Input label="Data" type="date" value={form.data} onChange={e => update('data', e.target.value)} className="flex-1 mb-[16px]" />
               </div>
-              <Select label="Responsável" value={form.responsavel} onChange={e => update('responsavel', e.target.value)} options={[{ value: 'João Carlos', label: 'João Carlos' }]} className="mb-[4px]" />
+              <Select label="Responsável" value={form.responsavel} onChange={e => update('responsavel', e.target.value)} options={(usuarios || []).map(u => ({ value: u.nome, label: u.nome }))} className="mb-[4px]" />
             </div>
             <div className="py-[13px] px-[22px] border-t border-border bg-white flex gap-[10px] justify-end">
               <Button variant="secondary" onClick={() => navigate(-1)}>Cancelar</Button>

@@ -17,11 +17,11 @@ function MobileInicio() {
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center px-[22px] pt-[10px] pb-[16px]">
         <div>
-          <div className="text-[14px] text-text-secondary font-medium">Bom dia,</div>
+          <div className="text-[14px] text-text-secondary font-medium">{(() => { const h = new Date().getHours(); return h < 12 ? 'Bom dia,' : h < 18 ? 'Boa tarde,' : 'Boa noite,'; })()}</div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.02em]">{user.fazenda_nome || 'Minha Fazenda'}</div>
         </div>
         <div className="w-[42px] h-[42px] rounded-full bg-primary text-white flex items-center justify-center font-bold text-[15px]">
-          {(user.nome || 'JC').split(' ').map(n => n[0]).join('').slice(0, 2)}
+          {(user.nome || '?').split(' ').map(n => n[0]).join('').slice(0, 2)}
         </div>
       </div>
 
@@ -56,6 +56,7 @@ function DesktopInicio() {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const { data: stats } = useApi(() => api.dashboard.stats(), [])
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
   const s = stats || {}
 
   return (
@@ -81,18 +82,45 @@ function DesktopInicio() {
 
         <div className="grid grid-cols-[1.6fr_1fr] gap-[14px]">
           <div className="bg-card border border-border rounded-[14px] p-[18px]">
-            <div className="flex justify-between items-center mb-[14px]">
-              <span className="text-[15px] font-extrabold text-primary-dark">Peso médio do rebanho</span>
-              <span className="text-[12px] text-text-secondary font-semibold">jan – jun</span>
-            </div>
-            <svg viewBox="0 0 520 200" className="w-full h-[200px]">
-              <line x1="40" y1="20" x2="40" y2="170" stroke="#e6e3da" strokeWidth="1"/>
-              <line x1="40" y1="170" x2="510" y2="170" stroke="#e6e3da" strokeWidth="1"/>
-              <polyline points="40,150 135,138 230,120 325,108 420,92 510,78" fill="none" stroke="#3a5a40" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="510" cy="78" r="5" fill="#588157"/>
-              <text x="40" y="188" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295">jan</text>
-              <text x="495" y="188" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295">jun</text>
-            </svg>
+            {(() => {
+              const dados = (mensal || []).filter(m => m.peso_medio > 0)
+              if (dados.length < 2) {
+                return (
+                  <>
+                    <div className="flex justify-between items-center mb-[14px]">
+                      <span className="text-[15px] font-extrabold text-primary-dark">Peso médio do rebanho</span>
+                    </div>
+                    <div className="flex items-center justify-center h-[200px] text-text-secondary text-[14px] font-medium">Sem dados suficientes</div>
+                  </>
+                )
+              }
+              const pesos = dados.map(d => d.peso_medio)
+              const minP = Math.min(...pesos)
+              const maxP = Math.max(...pesos)
+              const range = maxP - minP || 1
+              const pts = dados.map((d, i) => {
+                const x = 40 + (i / (dados.length - 1)) * 470
+                const y = 160 - ((d.peso_medio - minP) / range) * 130 + 20
+                return `${x},${y}`
+              })
+              const lastPt = pts[pts.length - 1].split(',')
+              return (
+                <>
+                  <div className="flex justify-between items-center mb-[14px]">
+                    <span className="text-[15px] font-extrabold text-primary-dark">Peso médio do rebanho</span>
+                    <span className="text-[12px] text-text-secondary font-semibold">{dados[0].nome} – {dados[dados.length - 1].nome}</span>
+                  </div>
+                  <svg viewBox="0 0 520 200" className="w-full h-[200px]">
+                    <line x1="40" y1="20" x2="40" y2="170" stroke="#e6e3da" strokeWidth="1"/>
+                    <line x1="40" y1="170" x2="510" y2="170" stroke="#e6e3da" strokeWidth="1"/>
+                    <polyline points={pts.join(' ')} fill="none" stroke="#3a5a40" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx={lastPt[0]} cy={lastPt[1]} r="5" fill="#588157"/>
+                    <text x="40" y="188" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295">{dados[0].nome}</text>
+                    <text x="475" y="188" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295">{dados[dados.length - 1].nome}</text>
+                  </svg>
+                </>
+              )
+            })()}
           </div>
 
           <div className="bg-card border border-border rounded-[14px] p-[18px]">

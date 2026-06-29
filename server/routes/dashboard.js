@@ -97,4 +97,53 @@ router.get('/alertas', async (req, res) => {
   res.json(alertas)
 })
 
+const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+router.get('/mensal', async (req, res) => {
+  const fid = req.fazendaId
+  const ano = new Date().getFullYear()
+
+  const [receitas] = await pool.query(`
+    SELECT MONTH(lf.data) as mes, COALESCE(SUM(lf.valor), 0) as total
+    FROM lancamentos_financeiros lf
+    LEFT JOIN animais a ON lf.animal_id = a.id
+    LEFT JOIN lotes l ON lf.lote_id = l.id
+    WHERE lf.valor > 0 AND lf.lancamento_pai_id IS NULL AND YEAR(lf.data) = ?
+      AND (a.fazenda_id = ? OR l.fazenda_id = ? OR (lf.animal_id IS NULL AND lf.lote_id IS NULL))
+    GROUP BY MONTH(lf.data)
+  `, [ano, fid, fid])
+
+  const [despesas] = await pool.query(`
+    SELECT MONTH(lf.data) as mes, COALESCE(SUM(ABS(lf.valor)), 0) as total
+    FROM lancamentos_financeiros lf
+    LEFT JOIN animais a ON lf.animal_id = a.id
+    LEFT JOIN lotes l ON lf.lote_id = l.id
+    WHERE lf.valor < 0 AND lf.lancamento_pai_id IS NULL AND YEAR(lf.data) = ?
+      AND (a.fazenda_id = ? OR l.fazenda_id = ? OR (lf.animal_id IS NULL AND lf.lote_id IS NULL))
+    GROUP BY MONTH(lf.data)
+  `, [ano, fid, fid])
+
+  const [pesos] = await pool.query(`
+    SELECT MONTH(p.data) as mes, ROUND(AVG(p.peso_kg)) as media
+    FROM pesagens p
+    INNER JOIN animais a ON a.id = p.animal_id
+    WHERE a.fazenda_id = ? AND YEAR(p.data) = ?
+    GROUP BY MONTH(p.data)
+  `, [fid, ano])
+
+  const receitaMap = Object.fromEntries(receitas.map(r => [r.mes, parseFloat(r.total)]))
+  const despesaMap = Object.fromEntries(despesas.map(r => [r.mes, parseFloat(r.total)]))
+  const pesoMap = Object.fromEntries(pesos.map(r => [r.mes, r.media || 0]))
+
+  const dados = Array.from({ length: 12 }, (_, i) => ({
+    mes: i + 1,
+    nome: MESES[i],
+    receita: receitaMap[i + 1] || 0,
+    despesa: despesaMap[i + 1] || 0,
+    peso_medio: pesoMap[i + 1] || 0,
+  }))
+
+  res.json(dados)
+})
+
 export default router
