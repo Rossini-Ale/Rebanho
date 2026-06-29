@@ -68,22 +68,36 @@ function MobileRelatorios() {
   )
 }
 
+const periodos = [
+  { value: 'semestre1', label: 'Jan–Jun', meses: [1,2,3,4,5,6] },
+  { value: 'semestre2', label: 'Jul–Dez', meses: [7,8,9,10,11,12] },
+  { value: 'ano', label: 'Ano inteiro', meses: null },
+]
+
 function DesktopRelatorios() {
+  const [periodo, setPeriodo] = useState('semestre1')
+  const [loteFiltro, setLoteFiltro] = useState('todos')
+  const { data: lotesData } = useApi(() => api.lotes.listar(), [])
   const { data: resumo } = useApi(() => api.financeiro.resumo(), [])
   const { data: resultadoPorLote } = useApi(() => api.financeiro.porLote(), [])
   const rec = resumo ? parseFloat(resumo.receita) : 0
   const desp = resumo ? parseFloat(resumo.despesa) : 0
   const res = rec - desp
   const porCategoria = resumo?.por_categoria || []
-  const maxCat = porCategoria.length ? Math.max(...porCategoria.map(c => parseFloat(c.total))) : 1
-  const lotes = resultadoPorLote || []
+  const allLotes = resultadoPorLote || []
+  const lotes = loteFiltro === 'todos' ? allLotes : allLotes.filter(l => l.nome === loteFiltro)
+  const periodoAtual = periodos.find(p => p.value === periodo)
+  const ano = new Date().getFullYear()
+
+  const selectStyle = "appearance-none bg-white border-[1.5px] border-field-border rounded-chip py-[8px] px-[14px] pr-[30px] text-[13px] font-bold text-primary-dark outline-none cursor-pointer"
+  const selectBg = { backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%237c8378\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }
 
   return (
     <>
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.01em]">Relatórios</div>
-          <div className="text-[13px] text-text-secondary font-medium">Financeiro · jan – jun 2026</div>
+          <div className="text-[13px] text-text-secondary font-medium">Financeiro · {periodoAtual?.label} {ano}</div>
         </div>
         <div className="flex gap-[10px] items-center">
           <button className="bg-white border-[1.5px] border-[#cfd4c7] text-primary rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer">Exportar PDF</button>
@@ -92,9 +106,13 @@ function DesktopRelatorios() {
       </div>
 
       <div className="flex gap-[10px] px-[26px] py-[14px] pb-[12px] bg-header-bg border-b border-border">
-        <div className="bg-white border border-field-border rounded-chip py-[8px] px-[14px] text-[13px] font-semibold text-primary-dark flex gap-[18px] items-center">Tipo: <span className="font-bold">Financeiro</span> <span className="text-text-secondary">▾</span></div>
-        <div className="bg-white border border-field-border rounded-chip py-[8px] px-[14px] text-[13px] font-semibold text-primary-dark flex gap-[18px] items-center">Período: <span className="font-bold">Jan–Jun 2026</span> <span className="text-text-secondary">▾</span></div>
-        <div className="bg-white border border-field-border rounded-chip py-[8px] px-[14px] text-[13px] font-semibold text-primary-dark flex gap-[18px] items-center">Lote: <span className="font-bold">Todos</span> <span className="text-text-secondary">▾</span></div>
+        <select value={periodo} onChange={e => setPeriodo(e.target.value)} className={selectStyle} style={selectBg}>
+          {periodos.map(p => <option key={p.value} value={p.value}>{p.label} {ano}</option>)}
+        </select>
+        <select value={loteFiltro} onChange={e => setLoteFiltro(e.target.value)} className={selectStyle} style={selectBg}>
+          <option value="todos">Todos os lotes</option>
+          {(lotesData || []).map(l => <option key={l.id} value={l.nome}>{l.nome}</option>)}
+        </select>
       </div>
 
       <div className="flex-1 overflow-auto p-[18px_26px] bg-header-bg">
