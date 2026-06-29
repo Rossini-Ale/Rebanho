@@ -5,7 +5,7 @@ import useApi from '../hooks/useApi'
 import Chip from '../components/ui/Chip'
 import { api } from '../lib/api'
 import { calcularIdade } from '../lib/utils'
-import { Search, Beef, Scale, ArrowRightLeft } from 'lucide-react'
+import { Search, Beef, Scale, ArrowRightLeft, ChevronUp, ChevronDown } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState'
 import { SkeletonTable } from '../components/ui/Skeleton'
 
@@ -119,16 +119,40 @@ function MobileAnimais() {
   )
 }
 
+function SortHeader({ label, col, sortCol, sortDir, onSort }) {
+  const active = sortCol === col
+  return (
+    <span onClick={() => onSort(col)} className="cursor-pointer select-none flex items-center gap-[4px] hover:text-primary-dark transition-colors">
+      {label}
+      {active && (sortDir === 'asc'
+        ? <ChevronUp size={12} className="text-primary" />
+        : <ChevronDown size={12} className="text-primary" />
+      )}
+    </span>
+  )
+}
+
 function DesktopAnimais() {
   const [filtro, setFiltro] = useState('Todos')
   const [busca, setBusca] = useState('')
   const [pagina, setPagina] = useState(1)
+  const [sortCol, setSortCol] = useState(null)
+  const [sortDir, setSortDir] = useState('asc')
   const navigate = useNavigate()
   const porPagina = 8
   const { data: rawAnimais, loading } = useApi(() => api.animais.listar(), [])
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const animais = (rawAnimais || []).map(norm)
   const filtros = ['Todos', ...(lotes || []).map(l => l.nome), 'Fêmeas', 'Prenhes']
+
+  const toggleSort = (col) => {
+    if (sortCol === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortCol(col)
+      setSortDir('asc')
+    }
+  }
 
   const filtered = animais.filter(a => {
     if (busca) {
@@ -142,8 +166,28 @@ function DesktopAnimais() {
     return true
   })
 
-  const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina))
-  const paginados = filtered.slice((pagina - 1) * porPagina, pagina * porPagina)
+  const sorted = [...filtered].sort((a, b) => {
+    if (!sortCol) return 0
+    let va, vb
+    switch (sortCol) {
+      case 'brinco': va = a.brinco; vb = b.brinco; break
+      case 'raca': va = a.raca || ''; vb = b.raca || ''; break
+      case 'sexo': va = a.sexo || ''; vb = b.sexo || ''; break
+      case 'idade': va = a.nascimento || ''; vb = b.nascimento || ''; break
+      case 'lote': va = a.lote || ''; vb = b.lote || ''; break
+      case 'peso': va = a.peso || 0; vb = b.peso || 0; return sortDir === 'asc' ? va - vb : vb - va
+      case 'situacao': va = a.situacao || ''; vb = b.situacao || ''; break
+      default: return 0
+    }
+    if (typeof va === 'string') {
+      const cmp = va.localeCompare(vb)
+      return sortDir === 'asc' ? cmp : -cmp
+    }
+    return sortDir === 'asc' ? va - vb : vb - va
+  })
+
+  const totalPaginas = Math.max(1, Math.ceil(sorted.length / porPagina))
+  const paginados = sorted.slice((pagina - 1) * porPagina, pagina * porPagina)
 
   return (
     <>
@@ -188,7 +232,13 @@ function DesktopAnimais() {
           <>
             <div className="bg-white border border-border rounded-[14px] overflow-hidden">
               <div className="grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[13px] text-[12px] font-bold text-text-secondary uppercase tracking-[.04em] border-b border-[#eee9df]">
-                <span>Brinco</span><span>Raça</span><span>Sexo</span><span>Idade</span><span>Lote</span><span>Peso</span><span>Situação</span>
+                <SortHeader label="Brinco" col="brinco" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Raça" col="raca" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Sexo" col="sexo" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Idade" col="idade" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Lote" col="lote" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Peso" col="peso" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
+                <SortHeader label="Situação" col="situacao" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
               </div>
               {paginados.map(a => (
                 <button
@@ -215,7 +265,7 @@ function DesktopAnimais() {
               ))}
             </div>
             <div className="flex justify-between items-center pt-[14px] px-[4px] text-[13px] text-text-secondary font-semibold">
-              <span>Mostrando {Math.min((pagina - 1) * porPagina + 1, filtered.length)}–{Math.min(pagina * porPagina, filtered.length)} de {filtered.length}</span>
+              <span>Mostrando {Math.min((pagina - 1) * porPagina + 1, sorted.length)}–{Math.min(pagina * porPagina, sorted.length)} de {sorted.length}</span>
               <div className="flex gap-[6px]">
                 <button
                   onClick={() => setPagina(p => Math.max(1, p - 1))}

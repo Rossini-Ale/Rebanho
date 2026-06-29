@@ -247,8 +247,13 @@ function DesktopPerfil({ animal, eventos, pesagens }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-[22px_26px] bg-header-bg">
-        <div className="grid grid-cols-[290px_1fr] gap-[18px]">
+      <div className="flex-1 overflow-auto bg-header-bg">
+        <div className="flex items-center gap-[6px] px-[26px] pt-[16px] pb-[4px] text-[13px]">
+          <span onClick={() => navigate('/animais')} className="text-primary font-semibold cursor-pointer hover:underline">Animais</span>
+          <span className="text-text-secondary">›</span>
+          <span className="text-primary-dark font-bold">#{animal.brinco}</span>
+        </div>
+        <div className="grid grid-cols-[290px_1fr] gap-[18px] p-[10px_26px_22px_26px]">
           <div className="flex flex-col gap-[14px]">
             <div className="relative rounded-[14px] overflow-hidden" style={{ height: 185 }}>
               <div className="w-full h-full flex items-end justify-end p-[12px]" style={{ background: 'repeating-linear-gradient(135deg,#e7e3d8,#e7e3d8 10px,#ddd8ca 10px,#ddd8ca 20px)' }}>

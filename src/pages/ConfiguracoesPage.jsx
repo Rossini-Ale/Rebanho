@@ -7,6 +7,7 @@ import Input from '../components/ui/Input'
 import { api } from '../lib/api'
 import { categoriasCusto, produtosSanitarios, racas, touros } from '../lib/utils'
 import { ChevronLeft, Trash2, Plus, Copy, Check, Download } from 'lucide-react'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 
 
 function TabDadosFazenda({ user }) {
@@ -388,6 +389,7 @@ function TabTouros() {
 function TabUsuarios({ user }) {
   const { data: usuarios, loading, reload } = useApi(() => user.fazenda_id ? api.fazendas.usuarios(user.fazenda_id) : Promise.resolve([]), [])
   const [removendo, setRemovendo] = useState(null)
+  const [confirmando, setConfirmando] = useState(null)
 
   const remover = async (userId) => {
     setRemovendo(userId)
@@ -415,7 +417,7 @@ function TabUsuarios({ user }) {
           </div>
           {user.papel === 'admin' && u.papel !== 'admin' && (
             <button
-              onClick={() => remover(u.id)}
+              onClick={() => setConfirmando(u.id)}
               disabled={removendo === u.id}
               className="bg-transparent border-none cursor-pointer text-text-secondary hover:text-danger transition-colors p-[4px]"
             >
@@ -430,6 +432,16 @@ function TabUsuarios({ user }) {
           <div className="text-[12px] font-bold text-text-secondary mb-[2px]">Para adicionar operadores:</div>
           <div className="text-[12.5px] text-text-body font-medium">Compartilhe o código <span className="font-mono font-bold">{user.codigo_convite}</span> — eles usam na tela de cadastro.</div>
         </div>
+      )}
+
+      {confirmando && (
+        <ConfirmDialog
+          title="Remover usuário"
+          message={`Tem certeza que deseja remover este usuário da fazenda? Essa ação não pode ser desfeita.`}
+          confirmLabel="Remover"
+          onConfirm={() => { remover(confirmando); setConfirmando(null) }}
+          onCancel={() => setConfirmando(null)}
+        />
       )}
     </div>
   )

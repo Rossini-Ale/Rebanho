@@ -213,8 +213,12 @@ function DesktopRelatorios() {
                     const h2 = Math.round((d.despesa / maxVal) * 140)
                     return (
                       <g key={i}>
-                        <rect x={x} y={180 - h1} width={barW} height={h1} rx="2" fill={i === dados.length - 1 ? '#588157' : '#3a5a40'} />
-                        <rect x={x + barW + 3} y={180 - h2} width={barW} height={h2} rx="2" fill="#b54a2f" />
+                        <rect x={x} y={180 - h1} width={barW} height={h1} rx="2" fill={i === dados.length - 1 ? '#588157' : '#3a5a40'}>
+                          <title>Receita {d.nome}: R$ {d.receita.toLocaleString('pt-BR')}</title>
+                        </rect>
+                        <rect x={x + barW + 3} y={180 - h2} width={barW} height={h2} rx="2" fill="#b54a2f">
+                          <title>Despesa {d.nome}: R$ {d.despesa.toLocaleString('pt-BR')}</title>
+                        </rect>
                         <text x={x + barW / 2} y="196" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295" textAnchor="middle">{d.nome}</text>
                       </g>
                     )

@@ -69,7 +69,10 @@ function DesktopInicio() {
           <div className="text-[13px] text-text-secondary font-medium">{user.fazenda_nome || 'Minha Fazenda'}</div>
         </div>
         <div className="flex gap-[10px] items-center">
-          <div onClick={() => navigate('/animais')} className="bg-white border border-field-border rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] text-text-secondary font-medium w-[200px] cursor-pointer">Buscar por brinco…</div>
+          <div onClick={() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true, bubbles: true })) }} className="bg-white border border-field-border rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] text-text-secondary font-medium w-[240px] cursor-pointer flex items-center justify-between">
+            <span>Buscar por brinco…</span>
+            <kbd className="text-[11px] font-mono font-bold text-text-secondary bg-segmented-bg rounded-[5px] py-[2px] px-[6px]">⌘K</kbd>
+          </div>
           <button onClick={() => navigate('/animais/novo')} className="bg-primary text-white rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer border-none">+ Novo animal</button>
         </div>
       </div>
@@ -124,7 +127,6 @@ function DesktopInicio() {
                 const y = 160 - ((d.peso_medio - minP) / range) * 130 + 20
                 return `${x},${y}`
               })
-              const lastPt = pts[pts.length - 1].split(',')
               return (
                 <>
                   <div className="flex justify-between items-center mb-[14px]">
@@ -135,7 +137,14 @@ function DesktopInicio() {
                     <line x1="40" y1="20" x2="40" y2="170" stroke="#e6e3da" strokeWidth="1"/>
                     <line x1="40" y1="170" x2="510" y2="170" stroke="#e6e3da" strokeWidth="1"/>
                     <polyline points={pts.join(' ')} fill="none" stroke="#3a5a40" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx={lastPt[0]} cy={lastPt[1]} r="5" fill="#588157"/>
+                    {pts.map((pt, i) => {
+                      const [cx, cy] = pt.split(',')
+                      return (
+                        <circle key={i} cx={cx} cy={cy} r={i === pts.length - 1 ? 5 : 3} fill={i === pts.length - 1 ? '#588157' : '#3a5a40'}>
+                          <title>{dados[i].nome}: {dados[i].peso_medio} kg</title>
+                        </circle>
+                      )
+                    })}
                     <text x="40" y="188" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295">{dados[0].nome}</text>
                     <text x="475" y="188" fontFamily="Spline Sans Mono" fontSize="11" fill="#9aa295">{dados[dados.length - 1].nome}</text>
                   </svg>
