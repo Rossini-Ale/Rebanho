@@ -49,14 +49,14 @@ function norm(a) {
   }
 }
 
-const filtros = ['Todos', 'Pasto 1', 'Pasto 3', 'Fêmeas', 'Machos']
-
 function MobileAnimais() {
   const [filtro, setFiltro] = useState('Todos')
   const [busca, setBusca] = useState('')
   const navigate = useNavigate()
   const { data: rawAnimais, loading } = useApi(() => api.animais.listar(), [])
+  const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const animais = (rawAnimais || []).map(norm)
+  const filtros = ['Todos', ...(lotes || []).map(l => l.nome), 'Fêmeas', 'Machos']
 
   const filtered = animais.filter(a => {
     if (busca && !a.brinco.includes(busca)) return false
@@ -124,7 +124,9 @@ function DesktopAnimais() {
   const navigate = useNavigate()
   const porPagina = 8
   const { data: rawAnimais, loading } = useApi(() => api.animais.listar(), [])
+  const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const animais = (rawAnimais || []).map(norm)
+  const filtros = ['Todos', ...(lotes || []).map(l => l.nome), 'Fêmeas', 'Prenhes']
 
   const filtered = animais.filter(a => {
     if (busca && !a.brinco.includes(busca)) return false
@@ -165,7 +167,7 @@ function DesktopAnimais() {
       </div>
 
       <div className="flex gap-[8px] px-[26px] py-[14px] pb-[10px] bg-header-bg">
-        {['Todos', 'Pasto 1', 'Pasto 3', 'Fêmeas', 'Prenhes'].map(f => (
+        {filtros.map(f => (
           <Chip key={f} active={filtro === f} onClick={() => { setFiltro(f); setPagina(1) }}>{f}</Chip>
         ))}
       </div>
