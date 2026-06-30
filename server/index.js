@@ -14,6 +14,7 @@ import authRouter from './routes/auth.js'
 import dashboardRouter from './routes/dashboard.js'
 import fazendasRouter from './routes/fazendas.js'
 import configuracoesRouter from './routes/configuracoes.js'
+import relatoriosRouter from './routes/relatorios.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -40,6 +41,7 @@ app.use('/api/financeiro', authMiddleware, financeiroRouter)
 app.use('/api/dashboard', authMiddleware, dashboardRouter)
 app.use('/api/fazendas', authMiddleware, fazendasRouter)
 app.use('/api/configuracoes', authMiddleware, configuracoesRouter)
+app.use('/api/relatorios', authMiddleware, relatoriosRouter)
 
 const distPath = path.join(__dirname, '..', 'dist')
 app.use(express.static(distPath))

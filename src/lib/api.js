@@ -114,6 +114,12 @@ export const api = {
     mensal: () => request('/dashboard/mensal'),
   },
 
+  relatorios: {
+    rebanho: (params) => request(`/relatorios/rebanho?${new URLSearchParams(params || {})}`),
+    sanidade: (params) => request(`/relatorios/sanidade?${new URLSearchParams(params || {})}`),
+    financeiro: (params) => request(`/relatorios/financeiro?${new URLSearchParams(params || {})}`),
+  },
+
   configuracoes: {
     buscar: (chave) => request(`/configuracoes/${chave}`),
     salvar: (chave, valor) => request(`/configuracoes/${chave}`, { method: 'PUT', body: JSON.stringify({ valor }) }),
