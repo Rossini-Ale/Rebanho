@@ -23,6 +23,7 @@ import RelatoriosPage from './pages/RelatoriosPage'
 import NotificacoesPage from './pages/NotificacoesPage'
 import ConfiguracoesPage from './pages/ConfiguracoesPage'
 import MaisPage from './pages/MaisPage'
+import NotFoundPage from './pages/NotFoundPage'
 import useMediaQuery from './hooks/useMediaQuery'
 
 function AuthGuard({ children }) {
@@ -119,8 +120,10 @@ export default function App() {
             <Route path="notificacoes" element={<NotificacoesPage />} />
             <Route path="configuracoes" element={<ConfiguracoesPage />} />
             <Route path="mais" element={<MaisPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   )

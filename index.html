@@ -8,6 +8,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <title>Rebanho</title>
+    <style>
+      @media print {
+        /* Ocultar sidebar, header de botões e navegação */
+        aside, nav, [class*="sidebar"], [class*="TabBar"] { display: none !important; }
+        /* Remover overflow hidden para imprimir tudo */
+        html, body, #root, .h-dvh { height: auto !important; overflow: visible !important; }
+        /* Garantir cores e fundo */
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        /* Ocultar botões de ação */
+        button[class*="cursor-pointer"]:not([class*="bg-primary"]) { display: none !important; }
+        /* Remover sombras e bordas desnecessárias */
+        .shadow-card { box-shadow: none !important; }
+        /* Quebrar página antes de seções principais */
+        .page-break { break-before: page; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
