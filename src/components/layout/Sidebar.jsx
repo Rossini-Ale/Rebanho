@@ -15,6 +15,7 @@ import {
   Check,
   Users,
 } from 'lucide-react'
+import { api } from '../../lib/api'
 
 const menuItems = [
   { to: '/', label: 'Visão geral', icon: LayoutDashboard },
@@ -31,6 +32,7 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const [menuAberto, setMenuAberto] = useState(false)
   const [copiado, setCopiado] = useState(false)
+  const [alertCount, setAlertCount] = useState(0)
   const menuRef = useRef(null)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const initials = (user.nome || '').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
@@ -47,6 +49,10 @@ export default function Sidebar() {
     setCopiado(true)
     setTimeout(() => setCopiado(false), 2000)
   }
+
+  useEffect(() => {
+    api.dashboard.alertas().then(a => setAlertCount((a || []).filter(x => x.urgency !== 'agendado').length)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!menuAberto) return
@@ -84,7 +90,12 @@ export default function Sidebar() {
             }
           >
             <Icon size={18} />
-            {label}
+            <span className="flex-1">{label}</span>
+            {label === 'Notificações' && alertCount > 0 && (
+              <span className="w-[18px] h-[18px] rounded-full bg-danger text-white text-[11px] font-bold flex items-center justify-center leading-none">
+                {alertCount > 9 ? '9+' : alertCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>
