@@ -987,57 +987,58 @@ function DesktopConfiguracoes() {
   const tabParam = searchParams.get('tab')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const grupos = GRUPOS_CONFIG(user.papel === 'admin')
-  const defaultKey = tabParam || 'fazenda'
-  const [abaAtiva, setAbaAtiva] = useState(defaultKey)
+
+  const grupoInicial = () => {
+    if (!tabParam) return grupos[0].titulo
+    const g = grupos.find(g => g.itens.some(i => i.key === tabParam))
+    return g ? g.titulo : grupos[0].titulo
+  }
+
+  const [grupoAtivo, setGrupoAtivo] = useState(grupoInicial)
 
   useEffect(() => {
-    if (tabParam) setAbaAtiva(tabParam)
+    if (tabParam) {
+      const g = grupos.find(g => g.itens.some(i => i.key === tabParam))
+      if (g) setGrupoAtivo(g.titulo)
+    }
   }, [tabParam])
 
-  const abaLabel = grupos.flatMap(g => g.itens).find(i => i.key === abaAtiva)?.label || ''
+  const grupo = grupos.find(g => g.titulo === grupoAtivo)
 
   return (
     <>
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.01em]">Configurações</div>
-          <div className="text-[13px] text-text-secondary font-medium">{abaLabel}</div>
+          <div className="text-[13px] text-text-secondary font-medium">{grupoAtivo}</div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-[22px_26px] bg-header-bg">
-        <div className="grid grid-cols-[210px_1fr] gap-[24px]">
+      {/* 4 abas */}
+      <div className="flex gap-[4px] px-[26px] py-[14px] border-b border-border bg-header-bg">
+        {grupos.map(g => (
+          <button
+            key={g.titulo}
+            onClick={() => setGrupoAtivo(g.titulo)}
+            className={`py-[8px] px-[18px] rounded-chip text-[13.5px] font-bold border-none cursor-pointer transition-colors ${
+              grupoAtivo === g.titulo
+                ? 'bg-primary text-white'
+                : 'bg-white text-text-body border border-border hover:border-primary hover:text-primary'
+            }`}
+          >
+            {g.titulo}
+          </button>
+        ))}
+      </div>
 
-          {/* Sidebar agrupada */}
-          <div className="flex flex-col gap-[20px]">
-            {grupos.map(grupo => (
-              <div key={grupo.titulo}>
-                <div className="text-[11px] font-extrabold text-text-secondary uppercase tracking-[.08em] mb-[6px] px-[10px]">
-                  {grupo.titulo}
-                </div>
-                <div className="flex flex-col gap-[1px]">
-                  {grupo.itens.map(item => (
-                    <button
-                      key={item.key}
-                      onClick={() => setAbaAtiva(item.key)}
-                      className={`py-[10px] px-[12px] rounded-[10px] text-[13.5px] font-semibold text-left cursor-pointer border transition-colors ${
-                        abaAtiva === item.key
-                          ? 'font-bold text-primary-dark bg-white border-border shadow-[0_1px_4px_rgba(0,0,0,0.06)]'
-                          : 'text-text-body bg-transparent border-transparent hover:bg-[rgba(255,255,255,0.6)]'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Conteúdo */}
-          <div>
-            {renderTab(abaAtiva, user)}
-          </div>
+      {/* Conteúdo empilhado */}
+      <div className="flex-1 overflow-auto p-[24px_26px] bg-header-bg">
+        <div className="max-w-[680px] flex flex-col gap-[16px]">
+          {grupo?.itens.map(item => (
+            <div key={item.key}>
+              {renderTab(item.key, user)}
+            </div>
+          ))}
         </div>
       </div>
     </>
