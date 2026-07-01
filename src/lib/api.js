@@ -94,6 +94,7 @@ export const api = {
     },
     register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
     me: () => request('/auth/me'),
+    mudarSenha: (data) => request('/auth/senha', { method: 'PUT', body: JSON.stringify(data) }),
     logout: () => {
       localStorage.removeItem('token')
       localStorage.removeItem('user')

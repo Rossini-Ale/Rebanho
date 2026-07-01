@@ -638,6 +638,66 @@ function TabBackup() {
   )
 }
 
+function TabSeguranca() {
+  const [form, setForm] = useState({ atual: '', nova: '', confirmar: '' })
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState('')
+  const [sucesso, setSucesso] = useState(false)
+  const update = (f, v) => { setForm(s => ({ ...s, [f]: v })); setErro(''); setSucesso(false) }
+
+  const salvar = async () => {
+    if (!form.atual) { setErro('Informe a senha atual'); return }
+    if (!form.nova || form.nova.length < 6) { setErro('A nova senha deve ter pelo menos 6 caracteres'); return }
+    if (form.nova !== form.confirmar) { setErro('As senhas não conferem'); return }
+    setSalvando(true)
+    setErro('')
+    try {
+      await api.auth.mudarSenha({ senha_atual: form.atual, nova_senha: form.nova })
+      setSucesso(true)
+      setForm({ atual: '', nova: '', confirmar: '' })
+    } catch (err) {
+      setErro(err.message || 'Erro ao alterar senha')
+    } finally { setSalvando(false) }
+  }
+
+  return (
+    <div className="bg-white border border-border rounded-[14px] p-[18px]">
+      <div className="text-[15px] font-extrabold text-primary-dark mb-[4px]">Segurança</div>
+      <div className="text-[12.5px] text-text-secondary font-medium mb-[18px]">Altere sua senha de acesso ao sistema.</div>
+
+      <Input
+        label="Senha atual"
+        type="password"
+        value={form.atual}
+        onChange={e => update('atual', e.target.value)}
+        className="mb-[14px]"
+      />
+      <Input
+        label="Nova senha"
+        type="password"
+        value={form.nova}
+        onChange={e => update('nova', e.target.value)}
+        placeholder="Mínimo 6 caracteres"
+        className="mb-[14px]"
+      />
+      <Input
+        label="Confirmar nova senha"
+        type="password"
+        value={form.confirmar}
+        onChange={e => update('confirmar', e.target.value)}
+        className="mb-[18px]"
+      />
+
+      {erro && <div className="text-danger text-[13px] font-semibold mb-[12px]">{erro}</div>}
+      {sucesso && <div className="text-primary-medium text-[13px] font-semibold mb-[12px]">Senha alterada com sucesso!</div>}
+
+      <Button onClick={salvar} disabled={salvando}>
+        {salvando ? 'Salvando…' : 'Alterar senha'}
+      </Button>
+    </div>
+  )
+}
+
 function MobileConfiguracoes() {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const [abaAtiva, setAbaAtiva] = useState(null)
@@ -652,6 +712,7 @@ function MobileConfiguracoes() {
     { key: 'racas', label: 'Raças' },
     { key: 'touros', label: 'Touros / sêmen' },
     { key: 'usuarios', label: 'Usuários' },
+    { key: 'seguranca', label: 'Segurança' },
     { key: 'unidades', label: 'Unidades' },
     { key: 'sync', label: 'Sincronização' },
     { key: 'backup', label: 'Backup & exportar' },
@@ -677,6 +738,7 @@ function MobileConfiguracoes() {
           {abaAtiva === 'racas' && <TabRacas />}
           {abaAtiva === 'touros' && <TabTouros />}
           {abaAtiva === 'usuarios' && <TabUsuarios user={user} />}
+          {abaAtiva === 'seguranca' && <TabSeguranca />}
           {abaAtiva === 'unidades' && <TabUnidades />}
           {abaAtiva === 'sync' && <TabSincronizacao />}
           {abaAtiva === 'backup' && <TabBackup />}
@@ -715,7 +777,7 @@ function MobileConfiguracoes() {
   )
 }
 
-const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', receitas: 'Tipos de receita', sanitarios: 'Produtos sanitários', racas: 'Raças', touros: 'Touros / sêmen', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
+const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', receitas: 'Tipos de receita', sanitarios: 'Produtos sanitários', racas: 'Raças', touros: 'Touros / sêmen', seguranca: 'Segurança', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
 
 function DesktopConfiguracoes() {
   const [searchParams] = useSearchParams()
@@ -737,6 +799,7 @@ function DesktopConfiguracoes() {
     'Raças',
     'Touros / sêmen',
     'Usuários',
+    'Segurança',
     'Unidades',
     'Sincronização',
     'Backup',
@@ -777,6 +840,7 @@ function DesktopConfiguracoes() {
             {abaAtiva === 'Raças' && <TabRacas />}
             {abaAtiva === 'Touros / sêmen' && <TabTouros />}
             {abaAtiva === 'Usuários' && <TabUsuarios user={user} />}
+            {abaAtiva === 'Segurança' && <TabSeguranca />}
             {abaAtiva === 'Unidades' && <TabUnidades />}
             {abaAtiva === 'Sincronização' && <TabSincronizacao />}
             {abaAtiva === 'Backup' && <TabBackup />}

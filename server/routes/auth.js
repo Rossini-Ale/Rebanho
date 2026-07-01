@@ -77,6 +77,38 @@ router.post('/register', async (req, res) => {
   res.status(201).json({ id: result.insertId, token })
 })
 
+router.put('/senha', async (req, res) => {
+  const header = req.headers.authorization
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token não fornecido' })
+  }
+  let userId
+  try {
+    const decoded = jwt.verify(header.slice(7), JWT_SECRET)
+    userId = decoded.id
+  } catch {
+    return res.status(401).json({ error: 'Token inválido' })
+  }
+
+  const { senha_atual, nova_senha } = req.body
+  if (!senha_atual || !nova_senha) {
+    return res.status(400).json({ error: 'Informe a senha atual e a nova senha' })
+  }
+  if (nova_senha.length < 6) {
+    return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres' })
+  }
+
+  const [rows] = await pool.query('SELECT senha_hash FROM usuarios WHERE id = ?', [userId])
+  if (!rows.length) return res.status(404).json({ error: 'Usuário não encontrado' })
+
+  const valid = await bcrypt.compare(senha_atual, rows[0].senha_hash)
+  if (!valid) return res.status(401).json({ error: 'Senha atual incorreta' })
+
+  const novoHash = await bcrypt.hash(nova_senha, 10)
+  await pool.query('UPDATE usuarios SET senha_hash = ? WHERE id = ?', [novoHash, userId])
+  res.json({ ok: true })
+})
+
 router.get('/me', async (req, res) => {
   const header = req.headers.authorization
   if (!header || !header.startsWith('Bearer ')) {
