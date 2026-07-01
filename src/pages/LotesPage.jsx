@@ -140,7 +140,7 @@ function DesktopLotes() {
         )}
         {!loading && (lotes || []).length > 0 && (
         <div className="bg-white border border-border rounded-[14px] overflow-hidden">
-          <div className="grid grid-cols-[1.2fr_.8fr_.6fr_1.4fr_.8fr] px-[18px] py-[13px] text-[12px] font-bold text-text-secondary uppercase tracking-[.04em] border-b border-[#eee9df]">
+          <div className="grid grid-cols-[1.2fr_.8fr_.6fr_1.4fr_.8fr] px-[18px] py-[12px] text-[12px] font-semibold text-text-secondary border-b border-border">
             <span>Nome</span><span>Tipo</span><span>Animais</span><span>Ocupação</span><span>Peso médio</span>
           </div>
           {(lotes || []).map(lote => {
@@ -151,7 +151,7 @@ function DesktopLotes() {
               <button
                 key={lote.id}
                 onClick={() => navigate(`/lotes/${lote.id}`)}
-                className="grid grid-cols-[1.2fr_.8fr_.6fr_1.4fr_.8fr] px-[18px] py-[14px] text-[14px] items-center border-b border-[#f0ede4] last:border-b-0 cursor-pointer w-full text-left bg-transparent hover:bg-[#faf9f5] transition-colors"
+                className="grid grid-cols-[1.2fr_.8fr_.6fr_1.4fr_.8fr] px-[18px] py-[14px] text-[14px] items-center cursor-pointer w-full text-left bg-transparent hover:bg-[#f5f3ec] transition-colors"
               >
                 <span className="font-extrabold text-primary-dark">{lote.nome}</span>
                 <span><TipoBadge tipo={lote.tipo} /></span>
