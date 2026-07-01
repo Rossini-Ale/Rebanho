@@ -1,4 +1,5 @@
 import { useNavigate, Navigate } from 'react-router-dom'
+import { ChevronLeft } from 'lucide-react'
 import useMediaQuery from '../hooks/useMediaQuery'
 
 const itens = [
@@ -25,7 +26,10 @@ export default function MaisPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-[22px] py-[8px] pt-[14px]">
+      <div className="flex items-center gap-[12px] px-[22px] py-[8px] pt-[14px]">
+        <button onClick={() => navigate(-1)} className="text-primary bg-transparent border-none cursor-pointer p-0">
+          <ChevronLeft size={24} />
+        </button>
         <div className="text-[21px] font-extrabold text-primary-dark">Mais</div>
       </div>
 
