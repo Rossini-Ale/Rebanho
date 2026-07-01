@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
 import { api } from '../lib/api'
-import { Fence } from 'lucide-react'
+import { Fence, ChevronLeft } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState'
 import { SkeletonTable } from '../components/ui/Skeleton'
 
@@ -32,9 +32,14 @@ function MobileLotes() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center px-[22px] pt-[8px] pb-[14px]">
-        <div>
-          <div className="text-[21px] font-extrabold text-primary-dark">Lotes & pastos</div>
-          <div className="text-[13px] text-text-secondary font-medium">{(lotes || []).length} lotes · {totalAnimais} animais</div>
+        <div className="flex items-center gap-[12px]">
+          <button onClick={() => navigate(-1)} className="text-primary bg-transparent border-none cursor-pointer p-0">
+            <ChevronLeft size={24} />
+          </button>
+          <div>
+            <div className="text-[21px] font-extrabold text-primary-dark">Lotes & pastos</div>
+            <div className="text-[13px] text-text-secondary font-medium">{(lotes || []).length} lotes · {totalAnimais} animais</div>
+          </div>
         </div>
         <button
           onClick={() => navigate('/lotes/novo')}

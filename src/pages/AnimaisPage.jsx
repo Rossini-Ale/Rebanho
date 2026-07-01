@@ -5,7 +5,7 @@ import useApi from '../hooks/useApi'
 import Chip from '../components/ui/Chip'
 import { api } from '../lib/api'
 import { calcularIdade } from '../lib/utils'
-import { Search, Beef, Scale, ArrowRightLeft, ChevronUp, ChevronDown, SlidersHorizontal, X } from 'lucide-react'
+import { Search, Beef, Scale, ArrowRightLeft, ChevronUp, ChevronDown, SlidersHorizontal, X, ChevronLeft } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState'
 import { SkeletonTable } from '../components/ui/Skeleton'
 
@@ -91,8 +91,13 @@ function MobileAnimais() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-baseline px-[22px] pt-[8px] pb-[10px]">
-        <span className="text-[21px] font-extrabold text-primary-dark">Animais</span>
+      <div className="flex items-center justify-between px-[22px] pt-[8px] pb-[10px]">
+        <div className="flex items-center gap-[12px]">
+          <button onClick={() => navigate(-1)} className="text-primary bg-transparent border-none cursor-pointer p-0">
+            <ChevronLeft size={24} />
+          </button>
+          <span className="text-[21px] font-extrabold text-primary-dark">Animais</span>
+        </div>
         <span className="text-[14px] font-semibold text-text-secondary">
           <span className="font-mono text-primary font-bold">{animais.length}</span> total
         </span>
