@@ -6,7 +6,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import { api } from '../lib/api'
 import { categoriasCusto, categoriasReceita, produtosSanitarios, racas, touros } from '../lib/utils'
-import { ChevronLeft, Trash2, Plus, Copy, Check, Download } from 'lucide-react'
+import { ChevronLeft, Trash2, Plus, Copy, Check, Download, Upload, FileText, AlertCircle } from 'lucide-react'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 
 
@@ -638,6 +638,172 @@ function TabBackup() {
   )
 }
 
+function parseCSV(texto) {
+  const linhas = texto.trim().split('\n').map(l => l.trim()).filter(Boolean)
+  if (linhas.length < 2) return { headers: [], rows: [], erro: 'Arquivo vazio ou sem dados.' }
+
+  const sep = linhas[0].includes(';') ? ';' : ','
+  const headers = linhas[0].split(sep).map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''))
+
+  const obrigatorios = ['brinco', 'sexo', 'raca']
+  const faltando = obrigatorios.filter(c => !headers.includes(c))
+  if (faltando.length) return { headers, rows: [], erro: `Colunas obrigatórias ausentes: ${faltando.join(', ')}` }
+
+  const rows = linhas.slice(1).map(linha => {
+    const vals = linha.split(sep).map(v => v.trim().replace(/^"|"$/g, ''))
+    return Object.fromEntries(headers.map((h, i) => [h, vals[i] || '']))
+  }).filter(r => r.brinco)
+
+  return { headers, rows, erro: null }
+}
+
+function TabImportarCSV() {
+  const { data: lotes } = useApi(() => api.lotes.listar(), [])
+  const [preview, setPreview] = useState(null)
+  const [erro, setErro] = useState('')
+  const [importando, setImportando] = useState(false)
+  const [progresso, setProgresso] = useState(null)
+  const [resultado, setResultado] = useState(null)
+
+  const TEMPLATE = 'brinco,sexo,raca,nascimento,origem\n1001,Macho,Nelore,2023-05-10,nascido_aqui\n1002,Fêmea,Angus,2022-11-03,comprado'
+
+  const baixarTemplate = () => {
+    const blob = new Blob([TEMPLATE], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'template-animais.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setErro(''); setPreview(null); setResultado(null)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const { headers, rows, erro: err } = parseCSV(ev.target.result)
+      if (err) { setErro(err); return }
+      setPreview({ headers, rows })
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  const handleImportar = async () => {
+    if (!preview?.rows?.length) return
+    setImportando(true)
+    let ok = 0; let erros = 0
+    for (const r of preview.rows) {
+      try {
+        const sexoFmt = r.sexo?.toLowerCase().includes('f') ? 'Fêmea' : 'Macho'
+        const origemFmt = r.origem?.includes('comprado') ? 'comprado' : 'nascido_aqui'
+        const loteObj = lotes?.find(l => l.nome?.toLowerCase() === (r.lote || '').toLowerCase())
+        await api.animais.criar({
+          brinco: r.brinco,
+          sexo: sexoFmt,
+          raca: r.raca || 'Nelore',
+          data_nascimento: r.nascimento || null,
+          origem: origemFmt,
+          lote_id: loteObj?.id || null,
+        })
+        ok++
+      } catch { erros++ }
+      setProgresso(`${ok + erros}/${preview.rows.length}`)
+    }
+    setImportando(false)
+    setProgresso(null)
+    setResultado({ ok, erros })
+    setPreview(null)
+  }
+
+  return (
+    <div className="bg-white border border-border rounded-[14px] p-[18px]">
+      <div className="text-[15px] font-extrabold text-primary-dark mb-[4px]">Importar animais</div>
+      <div className="text-[12.5px] text-text-secondary font-medium mb-[18px]">
+        Importe um arquivo CSV com seus animais. Baixe o template para ver o formato esperado.
+      </div>
+
+      <div className="flex gap-[10px] mb-[18px]">
+        <button
+          onClick={baixarTemplate}
+          className="flex items-center gap-[7px] bg-chip-bg border border-field-border rounded-sidebar-item py-[9px] px-[14px] text-[13.5px] font-bold text-primary-dark cursor-pointer"
+        >
+          <FileText size={15} /> Baixar template
+        </button>
+        <label className="flex items-center gap-[7px] bg-primary text-white rounded-sidebar-item py-[9px] px-[14px] text-[13.5px] font-bold cursor-pointer">
+          <Upload size={15} /> Selecionar CSV
+          <input type="file" accept=".csv,.txt" onChange={handleFile} className="hidden" />
+        </label>
+      </div>
+
+      {erro && (
+        <div className="flex items-start gap-[8px] bg-[#fde8e4] rounded-[12px] p-[12px_14px] mb-[14px]">
+          <AlertCircle size={15} className="text-danger shrink-0 mt-[1px]" />
+          <span className="text-[13px] text-danger font-semibold">{erro}</span>
+        </div>
+      )}
+
+      {resultado && (
+        <div className="bg-chip-bg rounded-[12px] p-[14px_16px] mb-[14px]">
+          <div className="text-[14px] font-extrabold text-primary-dark mb-[4px]">Importação concluída</div>
+          <div className="text-[13px] text-text-body font-medium">
+            <span className="text-primary-medium font-bold">{resultado.ok} animais importados</span>
+            {resultado.erros > 0 && <span className="text-danger font-bold"> · {resultado.erros} erros</span>}
+          </div>
+        </div>
+      )}
+
+      {preview && (
+        <>
+          <div className="flex justify-between items-center mb-[10px]">
+            <span className="text-[14px] font-extrabold text-primary-dark">{preview.rows.length} animais encontrados</span>
+            <button onClick={() => setPreview(null)} className="text-[12.5px] font-bold text-text-secondary bg-transparent border-none cursor-pointer">Cancelar</button>
+          </div>
+
+          <div className="border border-border rounded-[12px] overflow-hidden mb-[14px]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12.5px]">
+                <thead>
+                  <tr className="bg-chip-bg border-b border-border">
+                    {preview.headers.map(h => (
+                      <th key={h} className="py-[8px] px-[12px] text-left font-bold text-text-secondary uppercase tracking-[.04em]">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.rows.slice(0, 8).map((r, i) => (
+                    <tr key={i} className="border-b border-[#f0ede4] last:border-b-0">
+                      {preview.headers.map(h => (
+                        <td key={h} className="py-[8px] px-[12px] text-text-body font-medium">{r[h] || '—'}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {preview.rows.length > 8 && (
+              <div className="py-[8px] px-[12px] text-[12px] text-text-secondary font-medium bg-chip-bg">
+                + {preview.rows.length - 8} linhas não mostradas
+              </div>
+            )}
+          </div>
+
+          <Button onClick={handleImportar} disabled={importando}>
+            {importando ? `Importando… ${progresso || ''}` : `Importar ${preview.rows.length} animais`}
+          </Button>
+        </>
+      )}
+
+      <div className="mt-[18px] bg-chip-bg rounded-[12px] p-[12px_14px]">
+        <div className="text-[12.5px] font-bold text-primary-dark mb-[4px]">Colunas do CSV</div>
+        <div className="text-[12px] text-text-body font-medium leading-[1.6]">
+          <b>brinco</b> (obrigatório), <b>sexo</b> (Macho/Fêmea, obrigatório), <b>raca</b> (obrigatório)<br/>
+          nascimento (AAAA-MM-DD), origem (nascido_aqui/comprado), lote (nome do lote)
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function TabSeguranca() {
   const [form, setForm] = useState({ atual: '', nova: '', confirmar: '' })
   const [salvando, setSalvando] = useState(false)
@@ -713,6 +879,7 @@ function MobileConfiguracoes() {
     { key: 'touros', label: 'Touros / sêmen' },
     { key: 'usuarios', label: 'Usuários' },
     { key: 'seguranca', label: 'Segurança' },
+    { key: 'importar', label: 'Importar animais' },
     { key: 'unidades', label: 'Unidades' },
     { key: 'sync', label: 'Sincronização' },
     { key: 'backup', label: 'Backup & exportar' },
@@ -739,6 +906,7 @@ function MobileConfiguracoes() {
           {abaAtiva === 'touros' && <TabTouros />}
           {abaAtiva === 'usuarios' && <TabUsuarios user={user} />}
           {abaAtiva === 'seguranca' && <TabSeguranca />}
+          {abaAtiva === 'importar' && <TabImportarCSV />}
           {abaAtiva === 'unidades' && <TabUnidades />}
           {abaAtiva === 'sync' && <TabSincronizacao />}
           {abaAtiva === 'backup' && <TabBackup />}
@@ -777,7 +945,7 @@ function MobileConfiguracoes() {
   )
 }
 
-const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', receitas: 'Tipos de receita', sanitarios: 'Produtos sanitários', racas: 'Raças', touros: 'Touros / sêmen', seguranca: 'Segurança', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
+const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', receitas: 'Tipos de receita', sanitarios: 'Produtos sanitários', racas: 'Raças', touros: 'Touros / sêmen', seguranca: 'Segurança', importar: 'Importar animais', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
 
 function DesktopConfiguracoes() {
   const [searchParams] = useSearchParams()
@@ -800,6 +968,7 @@ function DesktopConfiguracoes() {
     'Touros / sêmen',
     'Usuários',
     'Segurança',
+    'Importar animais',
     'Unidades',
     'Sincronização',
     'Backup',
@@ -841,6 +1010,7 @@ function DesktopConfiguracoes() {
             {abaAtiva === 'Touros / sêmen' && <TabTouros />}
             {abaAtiva === 'Usuários' && <TabUsuarios user={user} />}
             {abaAtiva === 'Segurança' && <TabSeguranca />}
+            {abaAtiva === 'Importar animais' && <TabImportarCSV />}
             {abaAtiva === 'Unidades' && <TabUnidades />}
             {abaAtiva === 'Sincronização' && <TabSincronizacao />}
             {abaAtiva === 'Backup' && <TabBackup />}

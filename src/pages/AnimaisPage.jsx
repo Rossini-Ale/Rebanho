@@ -5,9 +5,37 @@ import useApi from '../hooks/useApi'
 import Chip from '../components/ui/Chip'
 import { api } from '../lib/api'
 import { calcularIdade } from '../lib/utils'
-import { Search, Beef, Scale, ArrowRightLeft, ChevronUp, ChevronDown } from 'lucide-react'
+import { Search, Beef, Scale, ArrowRightLeft, ChevronUp, ChevronDown, SlidersHorizontal, X } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState'
 import { SkeletonTable } from '../components/ui/Skeleton'
+
+function idadeEmMeses(nascimento) {
+  if (!nascimento) return null
+  const d = new Date(nascimento)
+  const hoje = new Date()
+  return (hoje.getFullYear() - d.getFullYear()) * 12 + (hoje.getMonth() - d.getMonth())
+}
+
+const FAIXAS_IDADE = [
+  { value: '', label: 'Qualquer idade' },
+  { value: '0-6', label: 'Até 6 meses' },
+  { value: '6-12', label: '6 a 12 meses' },
+  { value: '12-24', label: '1 a 2 anos' },
+  { value: '24-48', label: '2 a 4 anos' },
+  { value: '48+', label: 'Mais de 4 anos' },
+]
+
+const SITUACOES = [
+  { value: '', label: 'Qualquer situação' },
+  { value: 'ativo', label: 'Ativo' },
+  { value: 'prenhe', label: 'Prenhe' },
+  { value: 'quarentena', label: 'Quarentena' },
+  { value: 'vendido', label: 'Vendido' },
+  { value: 'morto', label: 'Morto' },
+]
+
+const selectFiltro = "appearance-none bg-white border-[1.5px] border-field-border rounded-[10px] py-[8px] px-[12px] pr-[28px] text-[13px] font-semibold text-primary-dark outline-none cursor-pointer focus:border-primary"
+const selectBgArrow = { backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%237c8378\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }
 
 const situacaoStyle = {
   ativo: { color: '#588157', bg: '#e7ece4' },
@@ -138,12 +166,20 @@ function DesktopAnimais() {
   const [pagina, setPagina] = useState(1)
   const [sortCol, setSortCol] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
+  const [filtrosOpen, setFiltrosOpen] = useState(false)
+  const [pesoMin, setPesoMin] = useState('')
+  const [pesoMax, setPesoMax] = useState('')
+  const [filtroIdade, setFiltroIdade] = useState('')
+  const [filtroSituacao, setFiltroSituacao] = useState('')
   const navigate = useNavigate()
-  const porPagina = 8
+  const porPagina = 15
   const { data: rawAnimais, loading } = useApi(() => api.animais.listar(), [])
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const animais = (rawAnimais || []).map(norm)
   const filtros = ['Todos', ...(lotes || []).map(l => l.nome), 'Fêmeas', 'Prenhes']
+
+  const filtrosAtivos = [pesoMin, pesoMax, filtroIdade, filtroSituacao].filter(Boolean).length
+  const limparFiltros = () => { setPesoMin(''); setPesoMax(''); setFiltroIdade(''); setFiltroSituacao('') }
 
   const toggleSort = (col) => {
     if (sortCol === col) {
@@ -159,10 +195,26 @@ function DesktopAnimais() {
       const b = busca.toLowerCase()
       if (!a.brinco.toLowerCase().includes(b) && !(a.raca || '').toLowerCase().includes(b) && !(a.lote || '').toLowerCase().includes(b)) return false
     }
-    if (filtro === 'Fêmeas') return a.sexo === 'Fêmea'
-    if (filtro === 'Machos') return a.sexo === 'Macho'
-    if (filtro === 'Prenhes') return a.situacao === 'prenhe'
-    if (filtro !== 'Todos' && a.lote !== filtro) return false
+    if (filtro === 'Fêmeas') { if (a.sexo !== 'Fêmea') return false }
+    else if (filtro === 'Machos') { if (a.sexo !== 'Macho') return false }
+    else if (filtro === 'Prenhes') { if (a.situacao !== 'prenhe') return false }
+    else if (filtro !== 'Todos') { if (a.lote !== filtro) return false }
+
+    if (pesoMin && (a.peso || 0) < parseFloat(pesoMin)) return false
+    if (pesoMax && (a.peso || 0) > parseFloat(pesoMax)) return false
+
+    if (filtroSituacao && a.situacao !== filtroSituacao) return false
+
+    if (filtroIdade) {
+      const m = idadeEmMeses(a.nascimento)
+      if (m === null) return false
+      if (filtroIdade === '0-6' && m > 6) return false
+      if (filtroIdade === '6-12' && (m <= 6 || m > 12)) return false
+      if (filtroIdade === '12-24' && (m <= 12 || m > 24)) return false
+      if (filtroIdade === '24-48' && (m <= 24 || m > 48)) return false
+      if (filtroIdade === '48+' && m <= 48) return false
+    }
+
     return true
   })
 
@@ -207,6 +259,16 @@ function DesktopAnimais() {
             />
           </div>
           <button
+            onClick={() => setFiltrosOpen(o => !o)}
+            className={`relative flex items-center gap-[6px] rounded-sidebar-item py-[9px] px-[14px] text-[13.5px] font-bold cursor-pointer border transition-colors ${filtrosOpen || filtrosAtivos > 0 ? 'bg-primary text-white border-primary' : 'bg-white text-primary border-[#cfd4c7] hover:border-primary'}`}
+          >
+            <SlidersHorizontal size={14} />
+            Filtros
+            {filtrosAtivos > 0 && (
+              <span className="w-[16px] h-[16px] rounded-full bg-white text-primary text-[10px] font-bold flex items-center justify-center leading-none">{filtrosAtivos}</span>
+            )}
+          </button>
+          <button
             onClick={() => navigate('/animais/novo')}
             className="bg-primary text-white rounded-sidebar-item py-[9px] px-[16px] text-[13.5px] font-bold cursor-pointer border-none"
           >
@@ -215,7 +277,38 @@ function DesktopAnimais() {
         </div>
       </div>
 
-      <div className="flex gap-[8px] px-[26px] py-[14px] pb-[10px] bg-header-bg">
+      {filtrosOpen && (
+        <div className="px-[26px] py-[12px] bg-white border-b border-border flex items-end gap-[16px]">
+          <div>
+            <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[6px]">Peso mínimo (kg)</div>
+            <input value={pesoMin} onChange={e => { setPesoMin(e.target.value); setPagina(1) }} placeholder="0" className={selectFiltro} style={{ ...selectBgArrow, backgroundImage: 'none', width: 100 }} />
+          </div>
+          <div>
+            <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[6px]">Peso máximo (kg)</div>
+            <input value={pesoMax} onChange={e => { setPesoMax(e.target.value); setPagina(1) }} placeholder="∞" className={selectFiltro} style={{ backgroundImage: 'none', width: 100 }} />
+          </div>
+          <div>
+            <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[6px]">Faixa de idade</div>
+            <select value={filtroIdade} onChange={e => { setFiltroIdade(e.target.value); setPagina(1) }} className={selectFiltro} style={selectBgArrow}>
+              {FAIXAS_IDADE.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[6px]">Situação</div>
+            <select value={filtroSituacao} onChange={e => { setFiltroSituacao(e.target.value); setPagina(1) }} className={selectFiltro} style={selectBgArrow}>
+              {SITUACOES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+          {filtrosAtivos > 0 && (
+            <button onClick={() => { limparFiltros(); setPagina(1) }} className="flex items-center gap-[5px] text-[13px] font-bold text-danger bg-transparent border-none cursor-pointer mb-[2px]">
+              <X size={13} /> Limpar
+            </button>
+          )}
+          <div className="ml-auto text-[13px] text-text-secondary font-semibold mb-[2px]">{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</div>
+        </div>
+      )}
+
+      <div className="flex gap-[8px] px-[26px] py-[12px] pb-[8px] bg-header-bg">
         {filtros.map(f => (
           <Chip key={f} active={filtro === f} onClick={() => { setFiltro(f); setPagina(1) }}>{f}</Chip>
         ))}
