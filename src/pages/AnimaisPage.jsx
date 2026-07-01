@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
@@ -8,13 +8,6 @@ import { calcularIdade } from '../lib/utils'
 import { Search, Beef, Scale, ArrowRightLeft, ChevronUp, ChevronDown, SlidersHorizontal, X } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState'
 import { SkeletonTable } from '../components/ui/Skeleton'
-
-function idadeEmMeses(nascimento) {
-  if (!nascimento) return null
-  const d = new Date(nascimento)
-  const hoje = new Date()
-  return (hoje.getFullYear() - d.getFullYear()) * 12 + (hoje.getMonth() - d.getMonth())
-}
 
 const FAIXAS_IDADE = [
   { value: '', label: 'Qualquer idade' },
@@ -163,6 +156,7 @@ function SortHeader({ label, col, sortCol, sortDir, onSort }) {
 function DesktopAnimais() {
   const [filtro, setFiltro] = useState('Todos')
   const [busca, setBusca] = useState('')
+  const [buscaApi, setBuscaApi] = useState('')
   const [pagina, setPagina] = useState(1)
   const [sortCol, setSortCol] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
@@ -173,13 +167,51 @@ function DesktopAnimais() {
   const [filtroSituacao, setFiltroSituacao] = useState('')
   const navigate = useNavigate()
   const porPagina = 15
-  const { data: rawAnimais, loading } = useApi(() => api.animais.listar(), [])
+
+  useEffect(() => {
+    const t = setTimeout(() => { setBuscaApi(busca); setPagina(1) }, 350)
+    return () => clearTimeout(t)
+  }, [busca])
+
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
-  const animais = (rawAnimais || []).map(norm)
   const filtros = ['Todos', ...(lotes || []).map(l => l.nome), 'Fêmeas', 'Prenhes']
 
+  const apiParams = { page: pagina, limit: porPagina }
+  if (sortCol) { apiParams.sort = sortCol; apiParams.sort_dir = sortDir }
+  if (buscaApi) apiParams.busca = buscaApi
+  if (filtro === 'Fêmeas') apiParams.sexo = 'Fêmea'
+  else if (filtro === 'Prenhes') apiParams.situacao = 'prenhe'
+  else if (filtro !== 'Todos') apiParams.lote = filtro
+  if (filtroSituacao) apiParams.situacao = filtroSituacao
+  if (pesoMin) apiParams.peso_min = pesoMin
+  if (pesoMax) apiParams.peso_max = pesoMax
+  if (filtroIdade) apiParams.idade = filtroIdade
+
+  const deps = [pagina, sortCol, sortDir, buscaApi, filtro, filtroSituacao, pesoMin, pesoMax, filtroIdade]
+  const { data: paginaData, loading } = useApi(() => api.animais.listar(apiParams), deps)
+
+  const animais = (paginaData?.animais || []).map(norm)
+  const total = paginaData?.total || 0
+  const totalPaginas = paginaData?.totalPaginas || 1
+
   const filtrosAtivos = [pesoMin, pesoMax, filtroIdade, filtroSituacao].filter(Boolean).length
-  const limparFiltros = () => { setPesoMin(''); setPesoMax(''); setFiltroIdade(''); setFiltroSituacao('') }
+
+  const limparFiltros = () => {
+    setPesoMin(''); setPesoMax(''); setFiltroIdade(''); setFiltroSituacao('')
+    setPagina(1)
+  }
+
+  const handleFiltroChip = (f) => {
+    setFiltro(f)
+    if (f === 'Prenhes') setFiltroSituacao('')
+    setPagina(1)
+  }
+
+  const handleSituacaoPanel = (s) => {
+    setFiltroSituacao(s)
+    if (s && filtro === 'Prenhes') setFiltro('Todos')
+    setPagina(1)
+  }
 
   const toggleSort = (col) => {
     if (sortCol === col) {
@@ -188,65 +220,19 @@ function DesktopAnimais() {
       setSortCol(col)
       setSortDir('asc')
     }
+    setPagina(1)
   }
 
-  const filtered = animais.filter(a => {
-    if (busca) {
-      const b = busca.toLowerCase()
-      if (!a.brinco.toLowerCase().includes(b) && !(a.raca || '').toLowerCase().includes(b) && !(a.lote || '').toLowerCase().includes(b)) return false
-    }
-    if (filtro === 'Fêmeas') { if (a.sexo !== 'Fêmea') return false }
-    else if (filtro === 'Machos') { if (a.sexo !== 'Macho') return false }
-    else if (filtro === 'Prenhes') { if (a.situacao !== 'prenhe') return false }
-    else if (filtro !== 'Todos') { if (a.lote !== filtro) return false }
-
-    if (pesoMin && (a.peso || 0) < parseFloat(pesoMin)) return false
-    if (pesoMax && (a.peso || 0) > parseFloat(pesoMax)) return false
-
-    if (filtroSituacao && a.situacao !== filtroSituacao) return false
-
-    if (filtroIdade) {
-      const m = idadeEmMeses(a.nascimento)
-      if (m === null) return false
-      if (filtroIdade === '0-6' && m > 6) return false
-      if (filtroIdade === '6-12' && (m <= 6 || m > 12)) return false
-      if (filtroIdade === '12-24' && (m <= 12 || m > 24)) return false
-      if (filtroIdade === '24-48' && (m <= 24 || m > 48)) return false
-      if (filtroIdade === '48+' && m <= 48) return false
-    }
-
-    return true
-  })
-
-  const sorted = [...filtered].sort((a, b) => {
-    if (!sortCol) return 0
-    let va, vb
-    switch (sortCol) {
-      case 'brinco': va = a.brinco; vb = b.brinco; break
-      case 'raca': va = a.raca || ''; vb = b.raca || ''; break
-      case 'sexo': va = a.sexo || ''; vb = b.sexo || ''; break
-      case 'idade': va = a.nascimento || ''; vb = b.nascimento || ''; break
-      case 'lote': va = a.lote || ''; vb = b.lote || ''; break
-      case 'peso': va = a.peso || 0; vb = b.peso || 0; return sortDir === 'asc' ? va - vb : vb - va
-      case 'situacao': va = a.situacao || ''; vb = b.situacao || ''; break
-      default: return 0
-    }
-    if (typeof va === 'string') {
-      const cmp = va.localeCompare(vb)
-      return sortDir === 'asc' ? cmp : -cmp
-    }
-    return sortDir === 'asc' ? va - vb : vb - va
-  })
-
-  const totalPaginas = Math.max(1, Math.ceil(sorted.length / porPagina))
-  const paginados = sorted.slice((pagina - 1) * porPagina, pagina * porPagina)
+  const headerCount = buscaApi || filtro !== 'Todos' || filtrosAtivos > 0
+    ? `${total} resultado${total !== 1 ? 's' : ''}`
+    : `${total} cadastrados`
 
   return (
     <>
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark">Animais</div>
-          <div className="text-[13px] text-text-secondary font-medium">{animais.length} cadastrados · {animais.filter(a => a.situacao === 'ativo').length} ativos</div>
+          <div className="text-[13px] text-text-secondary font-medium">{headerCount}</div>
         </div>
         <div className="flex gap-[10px] items-center">
           <div className="flex items-center gap-[8px] bg-white border border-field-border rounded-sidebar-item py-[9px] px-[16px] w-[260px]">
@@ -281,7 +267,7 @@ function DesktopAnimais() {
         <div className="px-[26px] py-[12px] bg-white border-b border-border flex items-end gap-[16px]">
           <div>
             <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[6px]">Peso mínimo (kg)</div>
-            <input value={pesoMin} onChange={e => { setPesoMin(e.target.value); setPagina(1) }} placeholder="0" className={selectFiltro} style={{ ...selectBgArrow, backgroundImage: 'none', width: 100 }} />
+            <input value={pesoMin} onChange={e => { setPesoMin(e.target.value); setPagina(1) }} placeholder="0" className={selectFiltro} style={{ backgroundImage: 'none', width: 100 }} />
           </div>
           <div>
             <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[6px]">Peso máximo (kg)</div>
@@ -295,30 +281,32 @@ function DesktopAnimais() {
           </div>
           <div>
             <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[6px]">Situação</div>
-            <select value={filtroSituacao} onChange={e => { setFiltroSituacao(e.target.value); setPagina(1) }} className={selectFiltro} style={selectBgArrow}>
+            <select value={filtroSituacao} onChange={e => handleSituacaoPanel(e.target.value)} className={selectFiltro} style={selectBgArrow}>
               {SITUACOES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
           {filtrosAtivos > 0 && (
-            <button onClick={() => { limparFiltros(); setPagina(1) }} className="flex items-center gap-[5px] text-[13px] font-bold text-danger bg-transparent border-none cursor-pointer mb-[2px]">
+            <button onClick={limparFiltros} className="flex items-center gap-[5px] text-[13px] font-bold text-danger bg-transparent border-none cursor-pointer mb-[2px]">
               <X size={13} /> Limpar
             </button>
           )}
-          <div className="ml-auto text-[13px] text-text-secondary font-semibold mb-[2px]">{filtered.length} resultado{filtered.length !== 1 ? 's' : ''}</div>
         </div>
       )}
 
       <div className="flex gap-[8px] px-[26px] py-[12px] pb-[8px] bg-header-bg">
         {filtros.map(f => (
-          <Chip key={f} active={filtro === f} onClick={() => { setFiltro(f); setPagina(1) }}>{f}</Chip>
+          <Chip key={f} active={filtro === f} onClick={() => handleFiltroChip(f)}>{f}</Chip>
         ))}
       </div>
 
       <div className="flex-1 overflow-auto px-[26px] pb-[20px] bg-header-bg">
         {loading && <SkeletonTable rows={8} cols={7} />}
-        {!loading && animais.length === 0 && (
+        {!loading && total === 0 && animais.length === 0 && (
           <div className="bg-white border border-border rounded-[14px] overflow-hidden">
-            <EmptyState icon={Beef} title="Nenhum animal cadastrado" description="Comece cadastrando seu primeiro animal para acompanhar o rebanho." actionLabel="Cadastrar animal" onAction={() => navigate('/animais/novo')} />
+            {buscaApi || filtro !== 'Todos' || filtrosAtivos > 0
+              ? <EmptyState icon={Search} title="Nenhum resultado" description="Tente ajustar os filtros ou a busca." />
+              : <EmptyState icon={Beef} title="Nenhum animal cadastrado" description="Comece cadastrando seu primeiro animal para acompanhar o rebanho." actionLabel="Cadastrar animal" onAction={() => navigate('/animais/novo')} />
+            }
           </div>
         )}
         {!loading && animais.length > 0 && (
@@ -333,7 +321,7 @@ function DesktopAnimais() {
                 <SortHeader label="Peso" col="peso" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
                 <SortHeader label="Situação" col="situacao" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
               </div>
-              {paginados.map(a => (
+              {animais.map(a => (
                 <button
                   key={a.id}
                   onClick={() => navigate(`/animais/${a.id}`)}
@@ -357,32 +345,33 @@ function DesktopAnimais() {
                 </button>
               ))}
             </div>
-            <div className="flex justify-between items-center pt-[14px] px-[4px] text-[13px] text-text-secondary font-semibold">
-              <span>Mostrando {Math.min((pagina - 1) * porPagina + 1, sorted.length)}–{Math.min(pagina * porPagina, sorted.length)} de {sorted.length}</span>
-              <div className="flex gap-[6px]">
-                <button
-                  onClick={() => setPagina(p => Math.max(1, p - 1))}
-                  disabled={pagina === 1}
-                  className="bg-white border border-field-border rounded-[8px] py-[6px] px-[11px] cursor-pointer disabled:opacity-40"
-                >‹</button>
-                {Array.from({ length: totalPaginas }, (_, i) => (
+            {totalPaginas > 1 && (
+              <div className="flex justify-between items-center pt-[14px] px-[4px] text-[13px] text-text-secondary font-semibold">
+                <span>Mostrando {Math.min((pagina - 1) * porPagina + 1, total)}–{Math.min(pagina * porPagina, total)} de {total}</span>
+                <div className="flex gap-[6px]">
                   <button
-                    key={i}
-                    onClick={() => setPagina(i + 1)}
-                    className={`rounded-[8px] py-[6px] px-[11px] cursor-pointer border ${
-                      pagina === i + 1
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-white border-field-border'
-                    }`}
-                  >{i + 1}</button>
-                ))}
-                <button
-                  onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
-                  disabled={pagina === totalPaginas}
-                  className="bg-white border border-field-border rounded-[8px] py-[6px] px-[11px] cursor-pointer disabled:opacity-40"
-                >›</button>
+                    onClick={() => setPagina(p => Math.max(1, p - 1))}
+                    disabled={pagina === 1}
+                    className="bg-white border border-field-border rounded-[8px] py-[6px] px-[11px] cursor-pointer disabled:opacity-40"
+                  >‹</button>
+                  {Array.from({ length: Math.min(totalPaginas, 7) }, (_, i) => {
+                    const p = totalPaginas <= 7 ? i + 1 : pagina <= 4 ? i + 1 : pagina >= totalPaginas - 3 ? totalPaginas - 6 + i : pagina - 3 + i
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => setPagina(p)}
+                        className={`rounded-[8px] py-[6px] px-[11px] cursor-pointer border ${pagina === p ? 'bg-primary text-white border-primary' : 'bg-white border-field-border'}`}
+                      >{p}</button>
+                    )
+                  })}
+                  <button
+                    onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
+                    disabled={pagina === totalPaginas}
+                    className="bg-white border border-field-border rounded-[8px] py-[6px] px-[11px] cursor-pointer disabled:opacity-40"
+                  >›</button>
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>

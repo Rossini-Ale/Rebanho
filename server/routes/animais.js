@@ -3,9 +3,27 @@ import pool from '../db.js'
 
 const router = Router()
 
+const VALID_SORTS = {
+  brinco: 'brinco', raca: 'raca', sexo: 'sexo',
+  idade: 'data_nascimento', lote: 'lote_nome',
+  peso: 'peso_atual', situacao: 'situacao',
+}
+
+const IDADE_SQL = {
+  '0-6': 'TIMESTAMPDIFF(MONTH, a.data_nascimento, CURDATE()) <= 6',
+  '6-12': 'TIMESTAMPDIFF(MONTH, a.data_nascimento, CURDATE()) BETWEEN 7 AND 12',
+  '12-24': 'TIMESTAMPDIFF(MONTH, a.data_nascimento, CURDATE()) BETWEEN 13 AND 24',
+  '24-48': 'TIMESTAMPDIFF(MONTH, a.data_nascimento, CURDATE()) BETWEEN 25 AND 48',
+  '48+': 'TIMESTAMPDIFF(MONTH, a.data_nascimento, CURDATE()) > 48',
+}
+
 router.get('/', async (req, res) => {
-  const { lote, sexo, situacao, busca } = req.query
-  let sql = `
+  const { lote, sexo, situacao, busca, peso_min, peso_max, idade, page, limit, sort, sort_dir } = req.query
+
+  const sortCol = VALID_SORTS[sort] || 'brinco'
+  const sortDir = sort_dir === 'desc' ? 'DESC' : 'ASC'
+
+  let innerSql = `
     SELECT a.*, l.nome AS lote_nome,
       (SELECT p.peso_kg FROM pesagens p WHERE p.animal_id = a.id ORDER BY p.data DESC LIMIT 1) AS peso_atual,
       (SELECT p.data FROM pesagens p WHERE p.animal_id = a.id ORDER BY p.data DESC LIMIT 1) AS ultima_pesagem
@@ -13,14 +31,42 @@ router.get('/', async (req, res) => {
     LEFT JOIN lotes l ON a.lote_id = l.id
     WHERE a.fazenda_id = ?
   `
-  const params = [req.fazendaId]
-  if (lote) { sql += ' AND l.nome = ?'; params.push(lote) }
-  if (sexo) { sql += ' AND a.sexo = ?'; params.push(sexo) }
-  if (situacao) { sql += ' AND a.situacao = ?'; params.push(situacao) }
-  if (busca) { sql += ' AND a.brinco LIKE ?'; params.push(`%${busca}%`) }
-  sql += ' ORDER BY a.brinco'
+  const innerParams = [req.fazendaId]
 
-  const [rows] = await pool.query(sql, params)
+  if (lote) { innerSql += ' AND l.nome = ?'; innerParams.push(lote) }
+  if (sexo) { innerSql += ' AND a.sexo = ?'; innerParams.push(sexo) }
+  if (situacao) { innerSql += ' AND a.situacao = ?'; innerParams.push(situacao) }
+  if (busca) {
+    innerSql += ' AND (a.brinco LIKE ? OR a.raca LIKE ? OR l.nome LIKE ?)'
+    innerParams.push(`%${busca}%`, `%${busca}%`, `%${busca}%`)
+  }
+  if (idade && IDADE_SQL[idade]) innerSql += ` AND ${IDADE_SQL[idade]}`
+
+  const outerWhere = []
+  const outerParams = []
+  if (peso_min) { outerWhere.push('peso_atual >= ?'); outerParams.push(parseFloat(peso_min)) }
+  if (peso_max) { outerWhere.push('peso_atual <= ?'); outerParams.push(parseFloat(peso_max)) }
+
+  let sql = `SELECT * FROM (${innerSql}) AS sub`
+  if (outerWhere.length) sql += ` WHERE ${outerWhere.join(' AND ')}`
+
+  if (page) {
+    const pageNum = Math.max(1, parseInt(page) || 1)
+    const limitNum = Math.min(parseInt(limit) || 50, 200)
+    const offset = (pageNum - 1) * limitNum
+
+    const countParams = [...innerParams, ...outerParams]
+    let countSql = `SELECT COUNT(*) as total FROM (${innerSql}) AS sub`
+    if (outerWhere.length) countSql += ` WHERE ${outerWhere.join(' AND ')}`
+    const [[{ total }]] = await pool.query(countSql, countParams)
+
+    sql += ` ORDER BY ${sortCol} ${sortDir} LIMIT ? OFFSET ?`
+    const [rows] = await pool.query(sql, [...innerParams, ...outerParams, limitNum, offset])
+    return res.json({ animais: rows, total, page: pageNum, totalPaginas: Math.ceil(total / limitNum) })
+  }
+
+  sql += ` ORDER BY ${sortCol} ${sortDir}`
+  const [rows] = await pool.query(sql, [...innerParams, ...outerParams])
   res.json(rows)
 })
 
@@ -82,6 +128,43 @@ router.get('/:id/historico', async (req, res) => {
   res.json(hist)
 })
 
+router.get('/:id/genealogia', async (req, res) => {
+  const id = req.params.id
+  const [[animal]] = await pool.query(
+    'SELECT mae_id, pai_id FROM animais WHERE id = ? AND fazenda_id = ?',
+    [id, req.fazendaId]
+  )
+  if (!animal) return res.status(404).json({ error: 'Animal não encontrado' })
+
+  let mae = null, pai = null
+  if (animal.mae_id) {
+    const [r] = await pool.query(
+      'SELECT id, brinco, raca, sexo, situacao FROM animais WHERE id = ? AND fazenda_id = ?',
+      [animal.mae_id, req.fazendaId]
+    )
+    if (r.length) mae = r[0]
+  }
+  if (animal.pai_id) {
+    const [r] = await pool.query(
+      'SELECT id, brinco, raca, sexo, situacao FROM animais WHERE id = ? AND fazenda_id = ?',
+      [animal.pai_id, req.fazendaId]
+    )
+    if (r.length) pai = r[0]
+  }
+
+  const [filhosMae] = await pool.query(
+    'SELECT id, brinco, raca, sexo, situacao FROM animais WHERE mae_id = ? AND fazenda_id = ?',
+    [id, req.fazendaId]
+  )
+  const [filhosPai] = await pool.query(
+    'SELECT id, brinco, raca, sexo, situacao FROM animais WHERE pai_id = ? AND fazenda_id = ?',
+    [id, req.fazendaId]
+  )
+  const filhos = [...filhosMae, ...filhosPai].filter((v, i, a) => a.findIndex(t => t.id === v.id) === i)
+
+  res.json({ mae, pai, filhos })
+})
+
 router.get('/:id/custos', async (req, res) => {
   const id = req.params.id
   const [rows] = await pool.query(
@@ -129,10 +212,10 @@ router.post('/', async (req, res) => {
 })
 
 router.put('/:id', async (req, res) => {
-  const { brinco, sexo, raca, data_nascimento, origem, lote_id, situacao, sisbov } = req.body
+  const { brinco, sexo, raca, data_nascimento, origem, lote_id, situacao, sisbov, mae_id, pai_id } = req.body
   await pool.query(
-    'UPDATE animais SET brinco=?, sexo=?, raca=?, data_nascimento=?, origem=?, lote_id=?, situacao=?, sisbov=? WHERE id=? AND fazenda_id=?',
-    [brinco, sexo, raca, data_nascimento, origem, lote_id, situacao, sisbov, req.params.id, req.fazendaId]
+    'UPDATE animais SET brinco=?, sexo=?, raca=?, data_nascimento=?, origem=?, lote_id=?, situacao=?, sisbov=?, mae_id=?, pai_id=? WHERE id=? AND fazenda_id=?',
+    [brinco, sexo, raca, data_nascimento, origem, lote_id, situacao, sisbov, mae_id || null, pai_id || null, req.params.id, req.fazendaId]
   )
   res.json({ ok: true })
 })

@@ -8,6 +8,7 @@ import { api } from '../lib/api'
 import { categoriasCusto, categoriasReceita, produtosSanitarios, racas, touros } from '../lib/utils'
 import { ChevronLeft, Trash2, Plus, Copy, Check, Download, Upload, FileText, AlertCircle } from 'lucide-react'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import Modal from '../components/ui/Modal'
 
 
 function TabDadosFazenda({ user }) {
@@ -442,12 +443,37 @@ function TabUsuarios({ user }) {
   const { data: usuarios, loading, reload } = useApi(() => user.fazenda_id ? api.fazendas.usuarios(user.fazenda_id) : Promise.resolve([]), [])
   const [removendo, setRemovendo] = useState(null)
   const [confirmando, setConfirmando] = useState(null)
+  const [resetando, setResetando] = useState(null)
+  const [novaSenha, setNovaSenha] = useState('')
+  const [erroReset, setErroReset] = useState('')
+  const [sucessoReset, setSucessoReset] = useState(false)
+  const [salvandoReset, setSalvandoReset] = useState(false)
 
   const remover = async (userId) => {
     setRemovendo(userId)
     await api.fazendas.removerUsuario(user.fazenda_id, userId)
     setRemovendo(null)
     reload()
+  }
+
+  const abrirReset = (u) => {
+    setResetando(u)
+    setNovaSenha('')
+    setErroReset('')
+    setSucessoReset(false)
+  }
+
+  const salvarReset = async () => {
+    if (!novaSenha || novaSenha.length < 6) { setErroReset('Mínimo 6 caracteres'); return }
+    setSalvandoReset(true)
+    setErroReset('')
+    try {
+      await api.fazendas.redefinirSenhaUsuario(user.fazenda_id, resetando.id, novaSenha)
+      setSucessoReset(true)
+      setNovaSenha('')
+    } catch (err) {
+      setErroReset(err.message || 'Erro ao redefinir senha')
+    } finally { setSalvandoReset(false) }
   }
 
   return (
@@ -468,13 +494,22 @@ function TabUsuarios({ user }) {
             <div className="text-[12.5px] text-text-secondary font-medium">{u.usuario} · {u.papel === 'admin' ? 'Admin' : 'Operador'}</div>
           </div>
           {user.papel === 'admin' && u.papel !== 'admin' && (
-            <button
-              onClick={() => setConfirmando(u.id)}
-              disabled={removendo === u.id}
-              className="bg-transparent border-none cursor-pointer text-text-secondary hover:text-danger transition-colors p-[4px]"
-            >
-              <Trash2 size={15} />
-            </button>
+            <div className="flex items-center gap-[4px]">
+              <button
+                onClick={() => abrirReset(u)}
+                className="text-[12px] font-bold text-primary bg-transparent border-none cursor-pointer px-[8px] py-[4px] rounded-[8px] hover:bg-chip-bg transition-colors"
+                title="Redefinir senha"
+              >
+                Redefinir senha
+              </button>
+              <button
+                onClick={() => setConfirmando(u.id)}
+                disabled={removendo === u.id}
+                className="bg-transparent border-none cursor-pointer text-text-secondary hover:text-danger transition-colors p-[4px]"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
           )}
         </div>
       ))}
@@ -494,6 +529,42 @@ function TabUsuarios({ user }) {
           onConfirm={() => { remover(confirmando); setConfirmando(null) }}
           onCancel={() => setConfirmando(null)}
         />
+      )}
+
+      {resetando && (
+        <Modal
+          title="Redefinir senha"
+          subtitle={resetando.nome}
+          width={400}
+          onClose={() => setResetando(null)}
+          footer={
+            sucessoReset ? (
+              <Button onClick={() => setResetando(null)}>Fechar</Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => setResetando(null)}>Cancelar</Button>
+                <Button onClick={salvarReset} disabled={salvandoReset || !novaSenha}>
+                  {salvandoReset ? 'Salvando…' : 'Salvar nova senha'}
+                </Button>
+              </>
+            )
+          }
+        >
+          {sucessoReset ? (
+            <div className="text-primary-medium text-[14px] font-semibold py-[4px]">Senha redefinida com sucesso!</div>
+          ) : (
+            <>
+              <Input
+                label="Nova senha"
+                type="password"
+                value={novaSenha}
+                onChange={e => { setNovaSenha(e.target.value); setErroReset('') }}
+                placeholder="Mínimo 6 caracteres"
+              />
+              {erroReset && <div className="text-danger text-[12.5px] font-semibold mt-[8px]">{erroReset}</div>}
+            </>
+          )}
+        </Modal>
       )}
     </div>
   )

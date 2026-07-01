@@ -43,6 +43,7 @@ export const api = {
     buscar: (id) => request(`/animais/${id}`),
     historico: (id) => request(`/animais/${id}/historico`),
     pesagens: (id) => request(`/animais/${id}/pesagens`),
+    genealogia: (id) => request(`/animais/${id}/genealogia`),
     criar: (data) => request('/animais', { method: 'POST', body: JSON.stringify(data) }),
     atualizar: (id, data) => request(`/animais/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     registrarPeso: (id, data) => request(`/animais/${id}/pesagens`, { method: 'POST', body: JSON.stringify(data) }),
@@ -107,6 +108,7 @@ export const api = {
     atualizar: (id, data) => request(`/fazendas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     usuarios: (id) => request(`/fazendas/${id}/usuarios`),
     removerUsuario: (fazendaId, userId) => request(`/fazendas/${fazendaId}/usuarios/${userId}`, { method: 'DELETE' }),
+    redefinirSenhaUsuario: (fazendaId, userId, nova_senha) => request(`/fazendas/${fazendaId}/usuarios/${userId}/senha`, { method: 'PUT', body: JSON.stringify({ nova_senha }) }),
   },
 
   dashboard: {

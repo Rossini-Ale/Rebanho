@@ -11,7 +11,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import useToast from '../hooks/useToast'
 import { api } from '../lib/api'
 import { calcularIdade, fmtDataCurta, fmtMoeda, racas } from '../lib/utils'
-import { ChevronLeft, Scale, ArrowRightLeft, LogOut, Pencil, ShieldCheck, Heart, Wallet, ArrowRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Scale, ArrowRightLeft, LogOut, Pencil, ShieldCheck, Heart, Wallet, ArrowRight } from 'lucide-react'
 
 const statusStyle = {
   parto_proximo: { label: 'Parto próximo', color: '#a9711f', bg: '#f6eed9' },
@@ -201,6 +201,70 @@ function TabCustos({ animalId }) {
   )
 }
 
+function TabGenealogia({ animalId }) {
+  const navigate = useNavigate()
+  const { data, loading } = useApi(() => api.animais.genealogia(animalId), [animalId])
+
+  if (loading) return <div className="text-center text-text-secondary py-[20px]">Carregando…</div>
+
+  const { mae, pai, filhos } = data || { mae: null, pai: null, filhos: [] }
+
+  function ParentCard({ label, a }) {
+    if (!a) {
+      return (
+        <div className="p-[14px_16px] bg-chip-bg rounded-[14px]">
+          <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[4px]">{label}</div>
+          <div className="text-[13.5px] text-text-secondary font-semibold">Não registrado</div>
+        </div>
+      )
+    }
+    return (
+      <button
+        onClick={() => navigate(`/animais/${a.id}`)}
+        className="flex items-center gap-[12px] p-[14px_16px] bg-white border border-border rounded-[14px] cursor-pointer w-full text-left hover:bg-chip-bg transition-colors"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="text-[11px] font-bold text-text-secondary uppercase tracking-[.04em] mb-[4px]">{label}</div>
+          <div className="font-mono text-[16px] font-bold text-primary-dark">{a.brinco}</div>
+          <div className="text-[12.5px] text-text-secondary font-medium">{a.raca} · {a.sexo}</div>
+        </div>
+        <ChevronRight size={16} className="text-text-secondary shrink-0" />
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-[14px]">
+      <div className="grid grid-cols-2 gap-[14px]">
+        <ParentCard label="Mãe" a={mae} />
+        <ParentCard label="Pai" a={pai} />
+      </div>
+
+      <div className="bg-white border border-border rounded-[14px] p-[18px]">
+        <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">
+          Crias {filhos.length > 0 && <span className="text-text-secondary font-semibold text-[14px]">({filhos.length})</span>}
+        </div>
+        {filhos.length === 0 && (
+          <div className="py-[8px] text-[13.5px] text-text-secondary font-semibold">Nenhuma cria registrada</div>
+        )}
+        {filhos.map((f, i) => (
+          <button
+            key={f.id}
+            onClick={() => navigate(`/animais/${f.id}`)}
+            className={`flex justify-between items-center w-full text-left py-[12px] bg-transparent border-none cursor-pointer hover:bg-chip-bg -mx-[18px] px-[18px] transition-colors ${i < filhos.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}
+          >
+            <div>
+              <div className="font-mono text-[14px] font-bold text-primary-dark">{f.brinco}</div>
+              <div className="text-[12px] text-text-secondary font-medium">{f.raca} · {f.sexo}</div>
+            </div>
+            <ChevronRight size={14} className="text-text-secondary" />
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function TabReproducao({ animalId }) {
   const { data, loading } = useApi(() => api.animais.reproducao(animalId), [animalId])
   const coberturas = data?.coberturas || []
@@ -259,6 +323,8 @@ function DesktopPerfil({ animal, eventos, pesagens, reload }) {
   const { data: lotes } = useApi(() => api.lotes.listar(), [])
   const { data: racasConfig } = useApi(() => api.configuracoes.buscar('racas').catch(() => null), [])
   const racasList = racasConfig?.valor || racas
+  const { data: femeasList } = useApi(() => editando ? api.animais.listar({ sexo: 'Fêmea' }) : Promise.resolve([]), [editando])
+  const { data: machosList } = useApi(() => editando ? api.animais.listar({ sexo: 'Macho' }) : Promise.resolve([]), [editando])
 
   // Delete state
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -273,6 +339,8 @@ function DesktopPerfil({ animal, eventos, pesagens, reload }) {
       lote_id: animal.lote_id ? String(animal.lote_id) : '',
       situacao: animal.situacao,
       sisbov: animal.sisbov || '',
+      mae_id: animal.mae_id ? String(animal.mae_id) : '',
+      pai_id: animal.pai_id ? String(animal.pai_id) : '',
     })
     setEditando(true)
   }
@@ -289,6 +357,8 @@ function DesktopPerfil({ animal, eventos, pesagens, reload }) {
         lote_id: editForm.lote_id || null,
         situacao: editForm.situacao,
         sisbov: editForm.sisbov,
+        mae_id: editForm.mae_id || null,
+        pai_id: editForm.pai_id || null,
       })
       showToast('Animal atualizado com sucesso!')
       setEditando(false)
@@ -310,7 +380,7 @@ function DesktopPerfil({ animal, eventos, pesagens, reload }) {
     { label: 'Peso atual', value: `${peso} kg`, mono: true },
   ]
 
-  const abas = ['Histórico', 'Custos']
+  const abas = ['Histórico', 'Custos', 'Genealogia']
   if (animal.sexo === 'Fêmea') abas.push('Reprodução')
 
   return (
@@ -390,6 +460,7 @@ function DesktopPerfil({ animal, eventos, pesagens, reload }) {
 
             {abaAtiva === 'Histórico' && <TabHistorico eventos={eventos} pesagens={pesagens} />}
             {abaAtiva === 'Custos' && <TabCustos animalId={animal.id} />}
+            {abaAtiva === 'Genealogia' && <TabGenealogia animalId={animal.id} />}
             {abaAtiva === 'Reprodução' && <TabReproducao animalId={animal.id} />}
           </div>
         </div>
@@ -479,8 +550,31 @@ function DesktopPerfil({ animal, eventos, pesagens, reload }) {
             value={editForm.sisbov}
             onChange={e => updateEdit('sisbov', e.target.value)}
             placeholder="Código SISBOV (opcional)"
-            className="mb-[4px]"
+            className="mb-[16px]"
           />
+
+          <div className="flex gap-[14px]">
+            <Select
+              label="Mãe"
+              value={editForm.mae_id}
+              onChange={e => updateEdit('mae_id', e.target.value)}
+              options={[
+                { value: '', label: 'Não informada' },
+                ...(femeasList || []).filter(f => String(f.id) !== String(animal.id)).map(f => ({ value: String(f.id), label: `#${f.brinco}` })),
+              ]}
+              className="flex-1"
+            />
+            <Select
+              label="Pai"
+              value={editForm.pai_id}
+              onChange={e => updateEdit('pai_id', e.target.value)}
+              options={[
+                { value: '', label: 'Não informado' },
+                ...(machosList || []).filter(m => String(m.id) !== String(animal.id)).map(m => ({ value: String(m.id), label: `#${m.brinco}` })),
+              ]}
+              className="flex-1"
+            />
+          </div>
         </Modal>
       )}
 
