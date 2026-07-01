@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
 import Button from '../components/ui/Button'
@@ -1064,6 +1064,7 @@ function renderTab(key, user) {
 }
 
 function MobileConfiguracoes() {
+  const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const [abaAtiva, setAbaAtiva] = useState(null)
   const grupos = GRUPOS_CONFIG(user.papel === 'admin')
@@ -1089,7 +1090,9 @@ function MobileConfiguracoes() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-[14px] px-[20px] pt-[8px] pb-[14px]">
-        <ChevronLeft size={24} className="text-primary" />
+        <button onClick={() => navigate(-1)} className="text-primary bg-transparent border-none cursor-pointer p-0">
+            <ChevronLeft size={24} />
+          </button>
         <span className="text-[19px] font-extrabold text-primary-dark">Configurações</span>
       </div>
 

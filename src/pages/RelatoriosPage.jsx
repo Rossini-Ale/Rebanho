@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 import useApi from '../hooks/useApi'
 import KPITile from '../components/ui/KPITile'
@@ -6,7 +7,7 @@ import Chip from '../components/ui/Chip'
 import Button from '../components/ui/Button'
 import { api } from '../lib/api'
 import { fmtMoeda, fmtDataCurta } from '../lib/utils'
-import { Download } from 'lucide-react'
+import { Download, ChevronLeft } from 'lucide-react'
 
 // ── período ──────────────────────────────────────────────────────────────────
 
@@ -474,6 +475,7 @@ function RelSanidade({ params, periodoLabel }) {
 // ── mobile ────────────────────────────────────────────────────────────────────
 
 function MobileRelatorios() {
+  const navigate = useNavigate()
   const [tipo, setTipo] = useState('Financeiro')
   const { data: resumo } = useApi(() => api.financeiro.resumo(), [])
   const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
@@ -485,7 +487,12 @@ function MobileRelatorios() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-[20px] pt-[8px] pb-[12px]">
-        <span className="text-[19px] font-extrabold text-primary-dark">Relatórios</span>
+        <div className="flex items-center gap-[12px]">
+          <button onClick={() => navigate(-1)} className="text-primary bg-transparent border-none cursor-pointer p-0">
+            <ChevronLeft size={24} />
+          </button>
+          <span className="text-[19px] font-extrabold text-primary-dark">Relatórios</span>
+        </div>
         <span className="text-[13px] font-bold text-text-secondary bg-chip-bg py-[6px] px-[12px] rounded-chip">{new Date().getFullYear()}</span>
       </div>
       <div className="flex gap-[8px] px-[20px] mb-[14px]">
