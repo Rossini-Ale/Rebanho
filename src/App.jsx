@@ -101,21 +101,21 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route index element={<InicioPage />} />
             <Route path="animais" element={<AnimaisPage />} />
-            <Route path="animais/novo" element={<AnimaisPage />} />
+            <Route path="animais/novo" element={<AnimalCadastroPage />} />
             <Route path="animais/:id" element={<AnimalPerfilPage />} />
-            <Route path="registrar-peso" element={<AnimaisPage />} />
-            <Route path="mover-lote" element={<AnimaisPage />} />
-            <Route path="registrar-saida" element={<AnimaisPage />} />
+            <Route path="registrar-peso" element={<RegistrarPesoPage />} />
+            <Route path="mover-lote" element={<MoverLotePage />} />
+            <Route path="registrar-saida" element={<RegistrarSaidaPage />} />
             <Route path="lotes" element={<LotesPage />} />
-            <Route path="lotes/novo" element={<LotesPage />} />
+            <Route path="lotes/novo" element={<LoteCadastroPage />} />
             <Route path="lotes/:id" element={<LoteDetalhePage />} />
             <Route path="sanidade" element={<SanidadePage />} />
-            <Route path="sanidade/novo" element={<SanidadePage />} />
+            <Route path="sanidade/novo" element={<EventoSanitarioPage />} />
             <Route path="reproducao" element={<ReproducaoPage />} />
-            <Route path="reproducao/cobertura" element={<ReproducaoPage />} />
-            <Route path="reproducao/parto" element={<ReproducaoPage />} />
+            <Route path="reproducao/cobertura" element={<CoberturaPage />} />
+            <Route path="reproducao/parto" element={<PartoPage />} />
             <Route path="financeiro" element={<FinanceiroPage />} />
-            <Route path="financeiro/custo" element={<FinanceiroPage />} />
+            <Route path="financeiro/custo" element={<NovoCustoPage />} />
             <Route path="relatorios" element={<RelatoriosPage />} />
             <Route path="notificacoes" element={<NotificacoesPage />} />
             <Route path="configuracoes" element={<ConfiguracoesPage />} />

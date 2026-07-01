@@ -34,9 +34,12 @@ function MobileInicio() {
           <div className="text-[24px] font-extrabold text-primary-dark tracking-[-0.02em]">{user.nome?.split(' ')[0] || 'Olá'}</div>
           <div className="text-[13px] text-text-secondary font-medium">{user.fazenda_nome || 'Minha Fazenda'}</div>
         </div>
-        <div className="w-[42px] h-[42px] rounded-full bg-primary text-white flex items-center justify-center font-bold text-[15px] shrink-0 mt-[2px]">
+        <button
+          onClick={() => navigate('/mais')}
+          className="w-[42px] h-[42px] rounded-full bg-primary text-white flex items-center justify-center font-bold text-[15px] shrink-0 mt-[2px] border-none cursor-pointer"
+        >
           {initials}
-        </div>
+        </button>
       </div>
 
       {lista.length > 0 && (
