@@ -269,14 +269,14 @@ function DesktopFinanceiro() {
           <div className="flex justify-between items-center mb-[14px]">
             <span className="text-[15px] font-extrabold text-primary-dark">Lançamentos</span>
           </div>
-          <div className="grid grid-cols-[1.4fr_0.7fr_0.8fr_0.9fr_0.5fr] py-[10px] px-[4px] text-[12px] font-bold text-text-secondary uppercase"><span>Descrição</span><span>Tipo</span><span>Data</span><span className="text-right">Valor</span><span></span></div>
+          <div className="grid grid-cols-[1.4fr_0.7fr_0.8fr_0.9fr_0.5fr] py-[10px] px-[4px] text-[12px] font-semibold text-text-secondary border-b border-border mb-[2px]"><span>Descrição</span><span>Tipo</span><span>Data</span><span className="text-right">Valor</span><span></span></div>
           {lista.map(l => {
             const val = parseFloat(l.valor)
             const isPositive = val > 0
             const tipoLabel = isPositive ? 'Receita' : (l.tipo === 'compra' ? 'Compra' : 'Custo')
             const tipoColor = isPositive ? 'text-primary-medium' : 'text-danger'
             return (
-              <div key={l.id} className="group grid grid-cols-[1.4fr_0.7fr_0.8fr_0.9fr_0.5fr] py-[11px] px-[4px] text-[13.5px] border-t border-[#f0ede4] text-text-body items-center">
+              <div key={l.id} className="group grid grid-cols-[1.4fr_0.7fr_0.8fr_0.9fr_0.5fr] py-[11px] px-[4px] text-[13.5px] text-text-body items-center rounded-[8px] hover:bg-[#f5f3ec] transition-colors">
                 <span className="font-bold text-primary-dark">{l.descricao || l.categoria}</span>
                 <span className={`text-[12px] font-bold ${tipoColor}`}>{tipoLabel}</span>
                 <span className="font-mono">{fmtDataCurta(l.data)}</span>

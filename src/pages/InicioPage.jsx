@@ -119,19 +119,19 @@ function DesktopInicio() {
         </div>
 
         {/* Ações rápidas */}
-        <div className="grid grid-cols-4 gap-[10px] mb-[14px]">
-          {acoes.map(a => {
+        <div className="bg-white border border-border rounded-[14px] mb-[14px] flex overflow-hidden">
+          {acoes.map((a, idx) => {
             const Icon = a.icon
             return (
               <button
                 key={a.to}
                 onClick={() => navigate(a.to)}
-                className="bg-white border border-border rounded-[14px] py-[14px] px-[16px] flex items-center gap-[10px] cursor-pointer hover:shadow-card hover:border-primary transition-all text-left"
+                className={`flex-1 flex items-center gap-[10px] py-[13px] px-[16px] cursor-pointer hover:bg-[#f5f9f5] transition-colors text-left${idx < acoes.length - 1 ? ' border-r border-border' : ''}`}
               >
-                <span className="w-[36px] h-[36px] rounded-[10px] flex items-center justify-center shrink-0" style={{ background: a.bg }}>
-                  <Icon size={18} color={a.color} />
+                <span className="w-[32px] h-[32px] rounded-[8px] flex items-center justify-center shrink-0" style={{ background: a.bg }}>
+                  <Icon size={16} color={a.color} />
                 </span>
-                <span className="text-[13.5px] font-bold text-primary-dark leading-tight">{a.label}</span>
+                <span className="text-[13px] font-bold text-primary-dark leading-tight">{a.label}</span>
               </button>
             )
           })}

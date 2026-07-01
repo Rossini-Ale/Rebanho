@@ -312,7 +312,7 @@ function DesktopAnimais() {
         {!loading && animais.length > 0 && (
           <>
             <div className="bg-white border border-border rounded-[14px] overflow-hidden">
-              <div className="grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[13px] text-[12px] font-bold text-text-secondary uppercase tracking-[.04em] border-b border-[#eee9df]">
+              <div className="grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[12px] text-[12px] font-semibold text-text-secondary border-b border-border">
                 <SortHeader label="Brinco" col="brinco" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
                 <SortHeader label="Raça" col="raca" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
                 <SortHeader label="Sexo" col="sexo" sortCol={sortCol} sortDir={sortDir} onSort={toggleSort} />
@@ -325,7 +325,7 @@ function DesktopAnimais() {
                 <button
                   key={a.id}
                   onClick={() => navigate(`/animais/${a.id}`)}
-                  className="group grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[14px] text-[14px] items-center border-b border-[#f0ede4] last:border-b-0 cursor-pointer w-full text-left bg-transparent hover:bg-[#f5f3ec] transition-colors relative"
+                  className="group grid grid-cols-[90px_1.1fr_.8fr_.8fr_1fr_.9fr_1fr] px-[18px] py-[14px] text-[14px] items-center cursor-pointer w-full text-left bg-transparent hover:bg-[#f5f3ec] transition-colors relative"
                 >
                   <span className="font-mono font-bold text-primary-dark">{a.brinco}</span>
                   <span className="text-text-body font-medium">{a.raca}</span>
