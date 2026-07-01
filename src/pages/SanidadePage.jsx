@@ -188,11 +188,11 @@ function DesktopSanidade() {
         </div>
 
         <div className="bg-white border border-border rounded-[14px] p-[18px]">
-          <div className="grid grid-cols-[1.4fr_1fr_1fr_.8fr_.5fr] py-[10px] px-[4px] text-[12px] font-bold text-text-secondary uppercase">
+          <div className="grid grid-cols-[1.4fr_1fr_1fr_.8fr_.5fr] py-[10px] px-[4px] text-[12px] font-semibold text-text-secondary border-b border-border">
             <span>Evento</span><span>Alvo</span><span>Data</span><span>Status</span><span></span>
           </div>
           {all.map(ev => (
-            <div key={ev.id} className="group grid grid-cols-[1.4fr_1fr_1fr_.8fr_.5fr] py-[12px] px-[4px] text-[13.5px] border-t border-[#f0ede4] text-text-body items-center">
+            <div key={ev.id} className="group grid grid-cols-[1.4fr_1fr_1fr_.8fr_.5fr] py-[12px] px-[4px] text-[13.5px] text-text-body items-center rounded-[8px] hover:bg-[#f5f3ec] transition-colors">
               <span className="font-bold text-primary-dark">{ev.produto}</span>
               <span>{ev.lote_nome || 'Individual'} · {ev.qtd_animais || 1}</span>
               <span className="font-mono">{fmtDataCurta(aba === 'proximas' ? ev.data_proxima_dose || ev.data : ev.data)}</span>

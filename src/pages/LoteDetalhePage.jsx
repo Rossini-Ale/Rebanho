@@ -161,13 +161,13 @@ function DesktopDetalhe({ lote, animaisDoLote, reload }) {
         </div>
 
         <div className="bg-white border border-border rounded-[14px] p-[18px]">
-          <div className="grid grid-cols-[90px_1fr_.8fr_.9fr_1fr] py-[10px] px-[4px] text-[12px] font-bold text-text-secondary uppercase">
+          <div className="grid grid-cols-[90px_1fr_.8fr_.9fr_1fr] py-[10px] px-[4px] text-[12px] font-semibold text-text-secondary border-b border-border">
             <span>Brinco</span><span>Raça</span><span>Sexo</span><span>Peso</span><span>Situação</span>
           </div>
           {animaisDoLote.map(a => {
             const s = situacaoStyle[a.situacao] || situacaoStyle.ativo
             return (
-              <button key={a.id} onClick={() => navigate(`/animais/${a.id}`)} className="grid grid-cols-[90px_1fr_.8fr_.9fr_1fr] py-[11px] px-[4px] text-[13.5px] border-t border-[#f0ede4] text-text-body items-center cursor-pointer w-full text-left bg-transparent hover:bg-[#faf9f5] transition-colors">
+              <button key={a.id} onClick={() => navigate(`/animais/${a.id}`)} className="grid grid-cols-[90px_1fr_.8fr_.9fr_1fr] py-[11px] px-[4px] text-[13.5px] text-text-body items-center cursor-pointer w-full text-left bg-transparent hover:bg-[#f5f3ec] transition-colors">
                 <span className="font-mono font-bold text-primary-dark">{a.brinco}</span>
                 <span>{a.raca}</span>
                 <span>{a.sexo}</span>

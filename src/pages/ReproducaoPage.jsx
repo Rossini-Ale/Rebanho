@@ -166,8 +166,8 @@ function DesktopReproducao() {
         <div className="grid grid-cols-2 gap-[14px]">
           <div className="bg-white border border-border rounded-[14px] p-[18px]">
             <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Próximos partos</div>
-            {proximosPartos.map((c, i) => (
-              <div key={c.id} className={`flex justify-between items-center py-[12px] ${i < proximosPartos.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+            {proximosPartos.map((c) => (
+              <div key={c.id} className="flex justify-between items-center py-[10px]">
                 <span className="font-mono text-[15px] font-bold text-primary-dark">{c.brinco}</span>
                 <span className="text-[13px] font-bold" style={{ color: c.status === 'parto_proximo' ? '#a9711f' : '#588157' }}>{fmtDataCurta(c.data_prevista_parto)}</span>
               </div>
@@ -176,8 +176,8 @@ function DesktopReproducao() {
           </div>
           <div className="bg-white border border-border rounded-[14px] p-[18px]">
             <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Coberturas recentes</div>
-            {ativas.map((c, i) => (
-                <div key={c.id} className={`group flex justify-between items-center py-[12px] ${i < ativas.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+            {ativas.map((c) => (
+                <div key={c.id} className="group flex justify-between items-center py-[10px]">
                   <div>
                     <div className="font-mono text-[14.5px] font-bold text-primary-dark">{c.brinco}</div>
                     <div className="text-[12px] text-text-secondary">{c.metodo} · {fmtDataCurta(c.data_cobertura)}</div>

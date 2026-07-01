@@ -67,6 +67,7 @@ function DesktopInicio() {
   const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
   const { data: alertas } = useApi(() => api.dashboard.alertas(), [])
   const { data: coberturas } = useApi(() => api.reproducao.listar(), [])
+  const { data: gmdData } = useApi(() => api.relatorios.gmd({}), [])
   const s = stats || {}
 
   const proximosPartos = (coberturas || [])
@@ -97,9 +98,9 @@ function DesktopInicio() {
 
       <div className="flex-1 overflow-auto p-[18px_26px] bg-header-bg">
         {/* KPIs */}
-        <div className="grid grid-cols-4 gap-[14px] mb-[14px]">
+        <div className="grid grid-cols-5 gap-[14px] mb-[14px]">
           {!stats ? (
-            <><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /></>
+            <><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /><SkeletonKPI /></>
           ) : (
             <>
               <div onClick={() => navigate('/animais')} className="cursor-pointer hover:scale-[1.02] transition-transform">
@@ -107,6 +108,9 @@ function DesktopInicio() {
               </div>
               <div onClick={() => navigate('/animais')} className="cursor-pointer hover:scale-[1.02] transition-transform">
                 <KPITile label="Peso médio" value={<>{s.peso_medio || 0}<span className="text-[15px]"> kg</span></>} />
+              </div>
+              <div onClick={() => navigate('/relatorios')} className="cursor-pointer hover:scale-[1.02] transition-transform">
+                <KPITile label="GMD médio" value={gmdData?.gmd_medio ? `${gmdData.gmd_medio} kg/d` : '—'} subtitle={gmdData?.animais_com_dados ? `${gmdData.animais_com_dados} animais` : 'sem dados'} />
               </div>
               <div onClick={() => navigate('/reproducao')} className="cursor-pointer hover:scale-[1.02] transition-transform">
                 <KPITile label="Prenhez" value={String(s.prenhes || 0)} subtitle="fêmeas prenhes" />

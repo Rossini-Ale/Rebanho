@@ -96,6 +96,7 @@ function DesktopFinanceiro() {
   const { data: resumo, reload: reloadResumo } = useApi(() => api.financeiro.resumo({ mes: mesSel, ano: anoSel }), [mesSel, anoSel])
   const { data: mensal } = useApi(() => api.dashboard.mensal(), [])
   const { data: catConfig } = useApi(() => api.configuracoes.buscar('categorias_custo').catch(() => null), [])
+  const { data: porLoteData } = useApi(() => api.financeiro.porLote(), [])
   const catList = catConfig?.valor || categoriasCusto
   const { toast, showToast, hideToast } = useToast()
   const lista = lancamentos || []
@@ -293,6 +294,25 @@ function DesktopFinanceiro() {
             <EmptyState icon={Wallet} title="Nenhum lançamento" description="Registre receitas e despesas para acompanhar as finanças da fazenda." actionLabel="Novo lançamento" onAction={() => navigate('/financeiro/custo')} />
           )}
         </div>
+
+        {porLoteData && porLoteData.length > 0 && (
+          <div className="mt-[14px] bg-white border border-border rounded-[14px] p-[18px]">
+            <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Rentabilidade por lote</div>
+            <div className="grid grid-cols-[1fr_.8fr_.8fr_1fr] py-[10px] px-[4px] text-[12px] font-semibold text-text-secondary border-b border-border mb-[2px]">
+              <span>Lote</span><span className="text-right">Receita</span><span className="text-right">Despesa</span><span className="text-right">Resultado</span>
+            </div>
+            {porLoteData.map(l => (
+              <div key={l.nome} className="grid grid-cols-[1fr_.8fr_.8fr_1fr] py-[10px] px-[4px] text-[13.5px] text-text-body items-center rounded-[8px] hover:bg-[#f5f3ec] transition-colors">
+                <span className="font-bold text-primary-dark">{l.nome}</span>
+                <span className="font-mono text-right text-primary-medium">{fmtMoeda(l.receita)}</span>
+                <span className="font-mono text-right text-danger">{fmtMoeda(l.despesa)}</span>
+                <span className={`font-mono font-bold text-right ${l.resultado >= 0 ? 'text-primary-medium' : 'text-danger'}`}>
+                  {l.resultado >= 0 ? '+' : '−'}{fmtMoeda(Math.abs(l.resultado))}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {editando && editForm && (
