@@ -1033,7 +1033,7 @@ function DesktopConfiguracoes() {
 
       {/* Conteúdo empilhado */}
       <div className="flex-1 overflow-auto p-[24px_26px] bg-header-bg">
-        <div className="max-w-[680px] flex flex-col gap-[16px]">
+        <div className="max-w-[680px] mx-auto flex flex-col gap-[16px]">
           {grupo?.itens.map(item => (
             <div key={item.key}>
               {renderTab(item.key, user)}
