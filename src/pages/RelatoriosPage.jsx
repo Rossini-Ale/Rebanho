@@ -291,6 +291,117 @@ function RelRebanho({ params, periodoLabel }) {
   )
 }
 
+// ── relatório GMD ────────────────────────────────────────────────────────────
+
+function RelGMD({ params, periodoLabel }) {
+  const { data, loading } = useApi(() => api.relatorios.gmd(params), [JSON.stringify(params)])
+  const porLote = data?.por_lote || []
+  const porRaca = data?.por_raca || []
+  const top = data?.top_performers || []
+  const bottom = data?.bottom_performers || []
+  const maxLote = porLote.length ? Math.max(...porLote.map(l => l.gmd_medio)) : 1
+  const maxRaca = porRaca.length ? Math.max(...porRaca.map(r => r.gmd_medio)) : 1
+
+  const handleExport = () => {
+    if (!data) return
+    exportCSV(`gmd-${periodoLabel}`,
+      ['Lote', 'GMD Médio (kg/dia)', 'Animais'],
+      porLote.map(l => [l.lote_nome, l.gmd_medio, l.qtd_animais])
+    )
+  }
+
+  const fmtGmd = (v) => v != null ? `${parseFloat(v).toFixed(3)} kg/dia` : '—'
+
+  if (loading) return <div className="text-text-secondary text-[14px] py-[20px]">Carregando…</div>
+
+  if (!data || data.animais_com_dados === 0) return (
+    <div className="bg-white border border-border rounded-[14px] p-[32px] text-center">
+      <div className="text-[15px] font-bold text-primary-dark mb-[8px]">Sem dados de GMD</div>
+      <div className="text-[13px] text-text-secondary">É necessário pelo menos 2 pesagens por animal para calcular o ganho médio diário.</div>
+    </div>
+  )
+
+  return (
+    <>
+      <div className="grid grid-cols-4 gap-[14px] mb-[16px]">
+        <KPITile label="GMD médio" value={fmtGmd(data.gmd_medio)} subtitle="rebanho" variant="primary" />
+        <KPITile label="Animais" value={String(data.animais_com_dados)} subtitle="com 2+ pesagens" />
+        <KPITile label="Melhor GMD" value={top[0] ? fmtGmd(top[0].gmd) : '—'} subtitle={top[0] ? `#${top[0].brinco}` : '—'} />
+        <KPITile label="Pior GMD" value={bottom[0] ? fmtGmd(bottom[0].gmd) : '—'} subtitle={bottom[0] ? `#${bottom[0].brinco}` : '—'} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-[14px] mb-[14px]">
+        <div className="bg-white border border-border rounded-[14px] p-[18px]">
+          <div className="flex justify-between items-center mb-[14px]">
+            <span className="text-[15px] font-extrabold text-primary-dark">GMD por lote</span>
+            <button onClick={handleExport} className="flex items-center gap-[5px] text-[12.5px] font-bold text-primary bg-chip-bg border-none rounded-chip py-[5px] px-[10px] cursor-pointer"><Download size={12} /> CSV</button>
+          </div>
+          {porLote.map((l, i) => (
+            <div key={l.lote_nome} className={i < porLote.length - 1 ? 'mb-[14px]' : ''}>
+              <div className="flex justify-between text-[13.5px] mb-[5px]">
+                <span className="font-semibold text-text-body">{l.lote_nome}</span>
+                <span className="font-mono font-bold text-primary-dark">{l.gmd_medio.toFixed(3)} <span className="text-text-secondary font-normal">kg/dia · {l.qtd_animais} cab.</span></span>
+              </div>
+              <div className="h-[7px] bg-segmented-bg rounded-[6px]">
+                <div className="h-full rounded-[6px] bg-primary" style={{ width: `${Math.round((l.gmd_medio / maxLote) * 100)}%` }} />
+              </div>
+            </div>
+          ))}
+          {!porLote.length && <div className="text-center text-text-secondary text-[13px] py-[8px]">Sem dados por lote</div>}
+        </div>
+
+        <div className="bg-white border border-border rounded-[14px] p-[18px]">
+          <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">GMD por raça</div>
+          {porRaca.map((r, i) => (
+            <div key={r.raca} className={i < porRaca.length - 1 ? 'mb-[14px]' : ''}>
+              <div className="flex justify-between text-[13.5px] mb-[5px]">
+                <span className="font-semibold text-text-body">{r.raca}</span>
+                <span className="font-mono font-bold text-primary-dark">{r.gmd_medio.toFixed(3)} <span className="text-text-secondary font-normal">kg/dia · {r.qtd_animais} cab.</span></span>
+              </div>
+              <div className="h-[7px] bg-segmented-bg rounded-[6px]">
+                <div className="h-full rounded-[6px] bg-primary" style={{ width: `${Math.round((r.gmd_medio / maxRaca) * 100)}%` }} />
+              </div>
+            </div>
+          ))}
+          {!porRaca.length && <div className="text-center text-text-secondary text-[13px] py-[8px]">Sem dados por raça</div>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-[14px]">
+        <div className="bg-white border border-border rounded-[14px] p-[18px]">
+          <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Top 5 — Maior GMD</div>
+          <div className="grid grid-cols-[0.5fr_1fr_0.8fr_0.9fr] text-[11.5px] font-bold text-text-secondary uppercase tracking-[.04em] py-[6px] border-b border-[#f0ede4]">
+            <span>Brinco</span><span>Raça</span><span>Lote</span><span className="text-right">GMD</span>
+          </div>
+          {top.map((a, i) => (
+            <div key={a.id} className={`grid grid-cols-[0.5fr_1fr_0.8fr_0.9fr] items-center py-[10px] text-[13.5px] ${i < top.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+              <span className="font-bold text-primary-dark">#{a.brinco}</span>
+              <span className="text-text-body font-medium truncate">{a.raca}</span>
+              <span className="text-text-secondary text-[12.5px]">{a.lote_nome || '—'}</span>
+              <span className="font-mono font-bold text-primary-medium text-right">{parseFloat(a.gmd).toFixed(3)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-white border border-border rounded-[14px] p-[18px]">
+          <div className="text-[15px] font-extrabold text-primary-dark mb-[14px]">Bottom 5 — Menor GMD</div>
+          <div className="grid grid-cols-[0.5fr_1fr_0.8fr_0.9fr] text-[11.5px] font-bold text-text-secondary uppercase tracking-[.04em] py-[6px] border-b border-[#f0ede4]">
+            <span>Brinco</span><span>Raça</span><span>Lote</span><span className="text-right">GMD</span>
+          </div>
+          {bottom.map((a, i) => (
+            <div key={a.id} className={`grid grid-cols-[0.5fr_1fr_0.8fr_0.9fr] items-center py-[10px] text-[13.5px] ${i < bottom.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+              <span className="font-bold text-primary-dark">#{a.brinco}</span>
+              <span className="text-text-body font-medium truncate">{a.raca}</span>
+              <span className="text-text-secondary text-[12.5px]">{a.lote_nome || '—'}</span>
+              <span className="font-mono font-bold text-danger text-right">{parseFloat(a.gmd).toFixed(3)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── relatório de sanidade ─────────────────────────────────────────────────────
 
 function RelSanidade({ params, periodoLabel }) {
@@ -430,7 +541,7 @@ function DesktopRelatorios() {
 
       <div className="flex items-center gap-[10px] px-[26px] py-[12px] bg-header-bg border-b border-border">
         <div className="flex gap-[6px]">
-          {['Financeiro', 'Rebanho', 'Sanidade'].map(a => (
+          {['Financeiro', 'Rebanho', 'Sanidade', 'GMD'].map(a => (
             <button
               key={a}
               onClick={() => setAba(a)}
@@ -449,6 +560,7 @@ function DesktopRelatorios() {
         {aba === 'Financeiro' && <RelFinanceiro params={params} periodoLabel={periodoLabel} />}
         {aba === 'Rebanho' && <RelRebanho params={params} periodoLabel={periodoLabel} />}
         {aba === 'Sanidade' && <RelSanidade params={params} periodoLabel={periodoLabel} />}
+        {aba === 'GMD' && <RelGMD params={params} periodoLabel={periodoLabel} />}
       </div>
     </>
   )

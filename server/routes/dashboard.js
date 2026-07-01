@@ -3,6 +3,22 @@ import pool from '../db.js'
 
 const router = Router()
 
+const ALERTA_DEFAULTS = { vacinacao_dias: 7, parto_dias: 30, pesagem_dias: 60 }
+
+async function getAlertaConfig(fid) {
+  try {
+    const [rows] = await pool.query(
+      'SELECT valor FROM configuracoes WHERE fazenda_id = ? AND chave = ?',
+      [fid, 'alertas_config']
+    )
+    if (rows.length) {
+      const v = typeof rows[0].valor === 'string' ? JSON.parse(rows[0].valor) : rows[0].valor
+      return { ...ALERTA_DEFAULTS, ...v }
+    }
+  } catch {}
+  return { ...ALERTA_DEFAULTS }
+}
+
 router.get('/stats', async (req, res) => {
   const fid = req.fazendaId
   const [[totalAnimais]] = await pool.query('SELECT COUNT(*) as total FROM animais WHERE fazenda_id = ?', [fid])
@@ -46,6 +62,7 @@ router.get('/stats', async (req, res) => {
 
 router.get('/alertas', async (req, res) => {
   const fid = req.fazendaId
+  const cfg = await getAlertaConfig(fid)
   const alertas = []
 
   const [vencidos] = await pool.query(`
@@ -66,9 +83,9 @@ router.get('/alertas', async (req, res) => {
     SELECT c.*, a.brinco, a.raca FROM coberturas c
     INNER JOIN animais a ON c.femea_id = a.id
     WHERE a.fazenda_id = ? AND c.status IN ('parto_proximo','confirmada') AND c.data_prevista_parto IS NOT NULL
-      AND c.data_prevista_parto BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+      AND c.data_prevista_parto BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
     ORDER BY c.data_prevista_parto
-  `, [fid])
+  `, [fid, cfg.parto_dias])
   for (const p of partos) {
     const dias = Math.round((new Date(p.data_prevista_parto) - new Date()) / 86400000)
     alertas.push({
@@ -85,13 +102,36 @@ router.get('/alertas', async (req, res) => {
     FROM eventos_sanitarios e
     INNER JOIN lotes l ON e.lote_id = l.id AND l.fazenda_id = ?
     WHERE e.aplicado_em = 'lote' AND e.data_proxima_dose IS NOT NULL
-      AND e.data_proxima_dose BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+      AND e.data_proxima_dose BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
     GROUP BY e.lote_id, e.produto, e.id, e.data_proxima_dose, l.nome
     ORDER BY e.data_proxima_dose
-  `, [fid, fid])
+  `, [fid, fid, cfg.vacinacao_dias])
   for (const ev of proxEventos) {
     const dias = Math.round((new Date(ev.data_proxima_dose) - new Date()) / 86400000)
     alertas.push({ urgency: 'proximo', title: ev.produto, subtitle: `Lote ${ev.lote_nome} · ${ev.qtd} animais`, deadline: `Em ${dias} dias` })
+  }
+
+  const [semPesagem] = await pool.query(`
+    SELECT a.id, a.brinco, a.raca, l.nome AS lote_nome,
+      COALESCE(DATEDIFF(CURDATE(), MAX(p.data)), 9999) AS dias_sem_pesagem
+    FROM animais a
+    LEFT JOIN lotes l ON a.lote_id = l.id
+    LEFT JOIN pesagens p ON p.animal_id = a.id
+    WHERE a.fazenda_id = ? AND a.situacao = 'ativo'
+    GROUP BY a.id, a.brinco, a.raca, l.nome
+    HAVING dias_sem_pesagem >= ?
+    ORDER BY dias_sem_pesagem DESC
+    LIMIT 5
+  `, [fid, cfg.pesagem_dias])
+  for (const s of semPesagem) {
+    const label = s.dias_sem_pesagem === 9999 ? 'nunca pesado' : `há ${s.dias_sem_pesagem} dias`
+    alertas.push({
+      urgency: s.dias_sem_pesagem >= cfg.pesagem_dias * 1.5 ? 'vencido' : 'proximo',
+      title: `Sem pesagem · #${s.brinco}`,
+      subtitle: `${s.raca}${s.lote_nome ? ` · ${s.lote_nome}` : ''}`,
+      deadline: `Última: ${label}`,
+      acao: `/animais/${s.id}`,
+    })
   }
 
   res.json(alertas)

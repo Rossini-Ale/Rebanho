@@ -121,6 +121,7 @@ export const api = {
     rebanho: (params) => request(`/relatorios/rebanho?${new URLSearchParams(params || {})}`),
     sanidade: (params) => request(`/relatorios/sanidade?${new URLSearchParams(params || {})}`),
     financeiro: (params) => request(`/relatorios/financeiro?${new URLSearchParams(params || {})}`),
+    gmd: (params) => request(`/relatorios/gmd?${new URLSearchParams(params || {})}`),
   },
 
   configuracoes: {

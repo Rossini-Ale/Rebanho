@@ -53,7 +53,6 @@ router.get('/rebanho', async (req, res) => {
     [fid, ...dateW.params]
   )
 
-  const dateWV = whereDate('a.updated_at', dataInicio, dataFim)
   const [[vendidosPeriodo]] = await pool.query(
     `SELECT COUNT(*) as total FROM animais a WHERE a.fazenda_id = ? AND a.situacao = 'vendido'`,
     [fid]
@@ -172,6 +171,75 @@ router.get('/financeiro', async (req, res) => {
       despesa: parseFloat(r.despesa),
     })),
     top_lancamentos: topLancamentos,
+  })
+})
+
+router.get('/gmd', async (req, res) => {
+  const fid = req.fazendaId
+  const { dataInicio, dataFim } = req.query
+
+  const dateFilter = []
+  const dateParams = []
+  if (dataInicio) { dateFilter.push('data >= ?'); dateParams.push(dataInicio) }
+  if (dataFim) { dateFilter.push('data <= ?'); dateParams.push(dataFim) }
+  const dateSQL = dateFilter.length ? ' AND ' + dateFilter.join(' AND ') : ''
+
+  const [rows] = await pool.query(`
+    SELECT
+      a.id, a.brinco, a.raca, l.nome AS lote_nome,
+      p1.peso_kg AS peso_inicial,
+      p2.peso_kg AS peso_final,
+      prim.data AS data_inicio,
+      ult.data AS data_fim,
+      DATEDIFF(ult.data, prim.data) AS dias,
+      ROUND((p2.peso_kg - p1.peso_kg) / DATEDIFF(ult.data, prim.data), 3) AS gmd
+    FROM animais a
+    LEFT JOIN lotes l ON a.lote_id = l.id
+    INNER JOIN (
+      SELECT animal_id, MIN(data) AS data FROM pesagens WHERE 1=1 ${dateSQL} GROUP BY animal_id
+    ) AS prim ON prim.animal_id = a.id
+    INNER JOIN (
+      SELECT animal_id, MAX(data) AS data FROM pesagens WHERE 1=1 ${dateSQL} GROUP BY animal_id
+    ) AS ult ON ult.animal_id = a.id
+    INNER JOIN pesagens p1 ON p1.animal_id = prim.animal_id AND p1.data = prim.data
+    INNER JOIN pesagens p2 ON p2.animal_id = ult.animal_id AND p2.data = ult.data
+    WHERE a.fazenda_id = ? AND DATEDIFF(ult.data, prim.data) > 0
+    ORDER BY gmd DESC
+  `, [...dateParams, ...dateParams, fid])
+
+  if (!rows.length) return res.json({ gmd_medio: null, animais_com_dados: 0, por_lote: [], por_raca: [], top_performers: [], bottom_performers: [] })
+
+  const gmdMedio = rows.reduce((s, a) => s + parseFloat(a.gmd), 0) / rows.length
+
+  const loteMap = {}
+  const racaMap = {}
+  for (const a of rows) {
+    const lote = a.lote_nome || 'Sem lote'
+    if (!loteMap[lote]) loteMap[lote] = { lote_nome: lote, soma: 0, qtd: 0 }
+    loteMap[lote].soma += parseFloat(a.gmd)
+    loteMap[lote].qtd++
+
+    const raca = a.raca || 'Sem raça'
+    if (!racaMap[raca]) racaMap[raca] = { raca, soma: 0, qtd: 0 }
+    racaMap[raca].soma += parseFloat(a.gmd)
+    racaMap[raca].qtd++
+  }
+
+  const por_lote = Object.values(loteMap)
+    .map(l => ({ lote_nome: l.lote_nome, gmd_medio: Math.round(l.soma / l.qtd * 1000) / 1000, qtd_animais: l.qtd }))
+    .sort((a, b) => b.gmd_medio - a.gmd_medio)
+
+  const por_raca = Object.values(racaMap)
+    .map(r => ({ raca: r.raca, gmd_medio: Math.round(r.soma / r.qtd * 1000) / 1000, qtd_animais: r.qtd }))
+    .sort((a, b) => b.gmd_medio - a.gmd_medio)
+
+  res.json({
+    gmd_medio: Math.round(gmdMedio * 1000) / 1000,
+    animais_com_dados: rows.length,
+    por_lote,
+    por_raca,
+    top_performers: rows.slice(0, 5),
+    bottom_performers: [...rows].sort((a, b) => parseFloat(a.gmd) - parseFloat(b.gmd)).slice(0, 5),
   })
 })
 

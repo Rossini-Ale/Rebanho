@@ -875,6 +875,75 @@ function TabImportarCSV() {
   )
 }
 
+function TabAlertas() {
+  const DEFAULTS = { vacinacao_dias: 7, parto_dias: 30, pesagem_dias: 60 }
+  const [form, setForm] = useState(DEFAULTS)
+  const [salvando, setSalvando] = useState(false)
+  const [salvo, setSalvo] = useState(false)
+  const [carregado, setCarregado] = useState(false)
+
+  useEffect(() => {
+    api.configuracoes.buscar('alertas_config')
+      .then(res => { if (res?.valor) setForm({ ...DEFAULTS, ...res.valor }) })
+      .catch(() => {})
+      .finally(() => setCarregado(true))
+  }, [])
+
+  const update = (campo, valor) => {
+    const n = parseInt(valor)
+    if (!isNaN(n) && n > 0) setForm(f => ({ ...f, [campo]: n }))
+  }
+
+  const salvar = async () => {
+    setSalvando(true)
+    try {
+      await api.configuracoes.salvar('alertas_config', form)
+      setSalvo(true)
+      setTimeout(() => setSalvo(false), 2000)
+    } finally { setSalvando(false) }
+  }
+
+  const campos = [
+    { key: 'vacinacao_dias', label: 'Alertar vacinação com antecedência', unidade: 'dias' },
+    { key: 'parto_dias',     label: 'Alertar parto previsto com antecedência', unidade: 'dias' },
+    { key: 'pesagem_dias',   label: 'Alertar animal sem pesagem há mais de', unidade: 'dias' },
+  ]
+
+  return (
+    <div className="bg-white border border-border rounded-[14px] p-[18px]">
+      <div className="flex justify-between items-center mb-[4px]">
+        <div className="text-[15px] font-extrabold text-primary-dark">Alertas configuráveis</div>
+        {salvo && <span className="text-[12.5px] font-bold text-primary-medium">Salvo!</span>}
+      </div>
+      <div className="text-[12.5px] text-text-secondary font-medium mb-[18px]">Define com quantos dias de antecedência cada tipo de alerta aparece no dashboard.</div>
+
+      {campos.map((c, i) => (
+        <div key={c.key} className={`flex justify-between items-center py-[14px] ${i < campos.length - 1 ? 'border-b border-[#f0ede4]' : ''}`}>
+          <span className="text-[14.5px] font-semibold text-primary-dark">{c.label}</span>
+          <div className="flex items-center gap-[8px]">
+            <input
+              type="number"
+              min="1"
+              max="365"
+              value={form[c.key]}
+              onChange={e => update(c.key, e.target.value)}
+              disabled={!carregado}
+              className="w-[72px] text-center bg-chip-bg border border-field-border rounded-button py-[7px] px-[10px] text-[15px] font-mono font-bold text-primary-dark outline-none focus:border-primary"
+            />
+            <span className="text-[13px] text-text-secondary font-medium">{c.unidade}</span>
+          </div>
+        </div>
+      ))}
+
+      <div className="mt-[18px]">
+        <Button onClick={salvar} disabled={salvando || !carregado}>
+          {salvando ? 'Salvando…' : 'Salvar alertas'}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function TabSeguranca() {
   const [form, setForm] = useState({ atual: '', nova: '', confirmar: '' })
   const [salvando, setSalvando] = useState(false)
@@ -963,6 +1032,7 @@ const GRUPOS_CONFIG = (isAdmin) => [
   {
     titulo: 'Sistema',
     itens: [
+      { key: 'alertas', label: 'Alertas' },
       { key: 'seguranca', label: 'Segurança' },
       { key: 'importar', label: 'Importar animais' },
       { key: 'unidades', label: 'Unidades' },
@@ -983,6 +1053,7 @@ function renderTab(key, user) {
     case 'racas': return <TabRacas />
     case 'touros': return <TabTouros />
     case 'usuarios': return <TabUsuarios user={user} />
+    case 'alertas': return <TabAlertas />
     case 'seguranca': return <TabSeguranca />
     case 'importar': return <TabImportarCSV />
     case 'unidades': return <TabUnidades />
