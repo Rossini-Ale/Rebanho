@@ -5,48 +5,74 @@ import AlertCard from '../components/ui/AlertCard'
 import KPITile from '../components/ui/KPITile'
 import { api } from '../lib/api'
 import { fmtMoeda, fmtDataCurta } from '../lib/utils'
-import { Search, Scale, Heart, ShieldCheck, Wallet, TrendingUp } from 'lucide-react'
+import { Search, Scale, Heart, ShieldCheck, Wallet, TrendingUp, Bell, ChevronRight, AlignJustify } from 'lucide-react'
 import { SkeletonKPI } from '../components/ui/Skeleton'
 
 function MobileInicio() {
   const navigate = useNavigate()
-  const { data: alertas, loading } = useApi(() => api.dashboard.alertas(), [])
+  const { data: alertas } = useApi(() => api.dashboard.alertas(), [])
+  const { data: stats } = useApi(() => api.dashboard.stats(), [])
   const lista = alertas || []
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const h = new Date().getHours()
+  const saudacao = h < 12 ? 'Bom dia,' : h < 18 ? 'Boa tarde,' : 'Boa noite,'
+  const initials = (user.nome || '?').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+  const totalAnimais = stats?.total_animais || 0
+
+  const acoesSimples = [
+    { label: 'Ver animais', sub: `${totalAnimais} no rebanho`, to: '/animais', Icon: AlignJustify },
+    { label: 'Pesar', sub: 'um animal', to: '/registrar-peso', Icon: Scale },
+    { label: 'Vacinar', sub: 'lote inteiro', to: '/sanidade/novo', Icon: ShieldCheck },
+    { label: 'Anotar gasto', sub: 'rápido', to: '/financeiro/custo', Icon: Wallet },
+  ]
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center px-[22px] pt-[10px] pb-[16px]">
+      <div className="flex justify-between items-start px-[22px] pt-[16px] pb-[14px]">
         <div>
-          <div className="text-[14px] text-text-secondary font-medium">{(() => { const h = new Date().getHours(); return h < 12 ? 'Bom dia,' : h < 18 ? 'Boa tarde,' : 'Boa noite,'; })()}</div>
-          <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.02em]">{user.fazenda_nome || 'Minha Fazenda'}</div>
+          <div className="text-[14px] text-text-secondary font-medium">{saudacao}</div>
+          <div className="text-[24px] font-extrabold text-primary-dark tracking-[-0.02em]">{user.nome?.split(' ')[0] || 'Olá'}</div>
+          <div className="text-[13px] text-text-secondary font-medium">{user.fazenda_nome || 'Minha Fazenda'}</div>
         </div>
-        <div className="w-[42px] h-[42px] rounded-full bg-primary text-white flex items-center justify-center font-bold text-[15px]">
-          {(user.nome || '?').split(' ').map(n => n[0]).join('').slice(0, 2)}
+        <div className="w-[42px] h-[42px] rounded-full bg-primary text-white flex items-center justify-center font-bold text-[15px] shrink-0 mt-[2px]">
+          {initials}
         </div>
       </div>
 
-      <div
-        onClick={() => navigate('/animais')}
-        className="mx-[22px] mb-[18px] flex items-center gap-[12px] bg-white border border-border rounded-[16px] py-[14px] px-[16px] shadow-card cursor-pointer"
-      >
-        <Search size={18} className="text-text-secondary shrink-0" />
-        <span className="flex-1 text-text-secondary text-[15px] font-medium">Buscar por brinco…</span>
+      {lista.length > 0 && (
+        <button
+          onClick={() => navigate('/notificacoes')}
+          className="mx-[22px] mb-[14px] bg-danger rounded-[14px] p-[14px_16px] flex items-center gap-[12px] text-left cursor-pointer border-none"
+        >
+          <Bell size={20} className="text-white shrink-0" />
+          <div className="flex-1">
+            <div className="text-[14px] font-extrabold text-white">{lista.length} pendência{lista.length > 1 ? 's' : ''}</div>
+            <div className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>Toque para ver os alertas</div>
+          </div>
+          <ChevronRight size={18} className="text-white shrink-0" />
+        </button>
+      )}
+
+      <div className="grid grid-cols-2 gap-[10px] px-[22px] flex-1">
+        {acoesSimples.map(a => (
+          <button
+            key={a.to}
+            onClick={() => navigate(a.to)}
+            className="bg-white border border-[#eee9df] rounded-[18px] p-[20px] flex flex-col items-start gap-[14px] cursor-pointer text-left"
+          >
+            <div className="w-[44px] h-[44px] rounded-[12px] bg-chip-bg flex items-center justify-center">
+              <a.Icon size={22} className="text-primary" />
+            </div>
+            <div>
+              <div className="text-[17px] font-extrabold text-primary-dark leading-tight">{a.label}</div>
+              <div className="text-[12.5px] text-text-secondary font-medium mt-[2px]">{a.sub}</div>
+            </div>
+          </button>
+        ))}
       </div>
 
-      <div className="flex items-center justify-between px-[24px] pb-[12px]">
-        <span className="text-[17px] font-extrabold text-primary-dark">Hoje</span>
-        {lista.length > 0 && (
-          <span className="text-[13px] font-bold text-danger bg-danger-bg py-[3px] px-[10px] rounded-pill">{lista.length} pendências</span>
-        )}
-      </div>
-
-      <div className="flex-1 overflow-auto px-[22px] pb-[10px] flex flex-col gap-[11px]">
-        {loading && <div className="text-center text-text-secondary py-[20px]">Carregando…</div>}
-        {lista.map((a, i) => <AlertCard key={i} {...a} />)}
-        {!loading && lista.length === 0 && (
-          <div className="text-center text-text-secondary py-[40px] text-[14px]">Nenhum alerta pendente hoje.</div>
-        )}
+      <div className="px-[22px] py-[14px] text-center text-[12px] text-text-secondary font-medium">
+        ● Tudo salvo
       </div>
     </div>
   )

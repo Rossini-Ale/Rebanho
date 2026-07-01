@@ -1,15 +1,11 @@
 import { useNavigate, Navigate } from 'react-router-dom'
 import useMediaQuery from '../hooks/useMediaQuery'
 
-const modulos = [
+const itens = [
   { label: 'Sanidade', to: '/sanidade' },
   { label: 'Reprodução', to: '/reproducao' },
   { label: 'Financeiro', to: '/financeiro' },
   { label: 'Relatórios', to: '/relatorios' },
-]
-
-const sistema = [
-  { label: 'Notificações', to: '/notificacoes' },
   { label: 'Configurações', to: '/configuracoes' },
 ]
 
@@ -43,29 +39,12 @@ export default function MaisPage() {
 
       <div className="flex-1 overflow-auto px-[22px] pb-[8px]">
         <div className="bg-white border border-[#eee9df] rounded-[16px] overflow-hidden">
-          {modulos.map((item, i) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.to)}
-              className={`w-full flex items-center gap-[14px] py-[15px] px-[16px] bg-transparent border-none cursor-pointer ${
-                i < modulos.length - 1 ? 'border-b border-[#f0ede4]' : ''
-              }`}
-              style={i < modulos.length - 1 ? { borderBottom: '1px solid #f0ede4' } : {}}
-            >
-              <span className="w-[34px] h-[34px] rounded-chip bg-chip-bg shrink-0" />
-              <span className="flex-1 text-left text-[15.5px] font-bold text-primary-dark">{item.label}</span>
-              <span className="text-[#b8bdb0] font-bold">›</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="bg-white border border-[#eee9df] rounded-[16px] overflow-hidden mt-[12px]">
-          {sistema.map((item, i) => (
+          {itens.map((item, i) => (
             <button
               key={item.label}
               onClick={() => navigate(item.to)}
               className="w-full flex items-center gap-[14px] py-[15px] px-[16px] bg-transparent border-none cursor-pointer"
-              style={i < sistema.length - 1 ? { borderBottom: '1px solid #f0ede4' } : {}}
+              style={i < itens.length - 1 ? { borderBottom: '1px solid #f0ede4' } : {}}
             >
               <span className="w-[34px] h-[34px] rounded-chip bg-chip-bg shrink-0" />
               <span className="flex-1 text-left text-[15.5px] font-bold text-primary-dark">{item.label}</span>
