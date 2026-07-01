@@ -864,29 +864,71 @@ function TabSeguranca() {
   )
 }
 
+const GRUPOS_CONFIG = (isAdmin) => [
+  {
+    titulo: 'Fazenda',
+    itens: [
+      { key: 'fazenda', label: 'Dados da fazenda' },
+      ...(isAdmin ? [{ key: 'convite', label: 'Convite' }] : []),
+      { key: 'usuarios', label: 'Usuários' },
+      { key: 'lotes', label: 'Lotes & pastos' },
+    ],
+  },
+  {
+    titulo: 'Pecuária',
+    itens: [
+      { key: 'racas', label: 'Raças' },
+      { key: 'touros', label: 'Touros / sêmen' },
+      { key: 'sanitarios', label: 'Produtos sanitários' },
+    ],
+  },
+  {
+    titulo: 'Financeiro',
+    itens: [
+      { key: 'custos', label: 'Tipos de custo' },
+      { key: 'receitas', label: 'Tipos de receita' },
+    ],
+  },
+  {
+    titulo: 'Sistema',
+    itens: [
+      { key: 'seguranca', label: 'Segurança' },
+      { key: 'importar', label: 'Importar animais' },
+      { key: 'unidades', label: 'Unidades' },
+      { key: 'sync', label: 'Sincronização' },
+      { key: 'backup', label: 'Backup & exportar' },
+    ],
+  },
+]
+
+function renderTab(key, user) {
+  switch (key) {
+    case 'fazenda': return <TabDadosFazenda user={user} />
+    case 'convite': return <TabConvite user={user} />
+    case 'lotes': return <TabLotes />
+    case 'custos': return <TabTiposCusto />
+    case 'receitas': return <TabTiposReceita />
+    case 'sanitarios': return <TabProdutosSanitarios />
+    case 'racas': return <TabRacas />
+    case 'touros': return <TabTouros />
+    case 'usuarios': return <TabUsuarios user={user} />
+    case 'seguranca': return <TabSeguranca />
+    case 'importar': return <TabImportarCSV />
+    case 'unidades': return <TabUnidades />
+    case 'sync': return <TabSincronizacao />
+    case 'backup': return <TabBackup />
+    default: return null
+  }
+}
+
 function MobileConfiguracoes() {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const [abaAtiva, setAbaAtiva] = useState(null)
-
-  const abas = [
-    { key: 'fazenda', label: 'Dados da fazenda' },
-    ...(user.papel === 'admin' ? [{ key: 'convite', label: 'Convite' }] : []),
-    { key: 'lotes', label: 'Lotes & pastos' },
-    { key: 'custos', label: 'Tipos de custo' },
-    { key: 'receitas', label: 'Tipos de receita' },
-    { key: 'sanitarios', label: 'Produtos sanitários' },
-    { key: 'racas', label: 'Raças' },
-    { key: 'touros', label: 'Touros / sêmen' },
-    { key: 'usuarios', label: 'Usuários' },
-    { key: 'seguranca', label: 'Segurança' },
-    { key: 'importar', label: 'Importar animais' },
-    { key: 'unidades', label: 'Unidades' },
-    { key: 'sync', label: 'Sincronização' },
-    { key: 'backup', label: 'Backup & exportar' },
-  ]
+  const grupos = GRUPOS_CONFIG(user.papel === 'admin')
+  const todasAbas = grupos.flatMap(g => g.itens)
 
   if (abaAtiva) {
-    const titulo = abas.find(a => a.key === abaAtiva)?.label || ''
+    const titulo = todasAbas.find(a => a.key === abaAtiva)?.label || ''
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center gap-[14px] px-[20px] pt-[8px] pb-[14px]">
@@ -896,20 +938,7 @@ function MobileConfiguracoes() {
           <span className="text-[19px] font-extrabold text-primary-dark">{titulo}</span>
         </div>
         <div className="flex-1 overflow-auto px-[22px] pb-[20px]">
-          {abaAtiva === 'fazenda' && <TabDadosFazenda user={user} />}
-          {abaAtiva === 'convite' && <TabConvite user={user} />}
-          {abaAtiva === 'lotes' && <TabLotes />}
-          {abaAtiva === 'custos' && <TabTiposCusto />}
-          {abaAtiva === 'receitas' && <TabTiposReceita />}
-          {abaAtiva === 'sanitarios' && <TabProdutosSanitarios />}
-          {abaAtiva === 'racas' && <TabRacas />}
-          {abaAtiva === 'touros' && <TabTouros />}
-          {abaAtiva === 'usuarios' && <TabUsuarios user={user} />}
-          {abaAtiva === 'seguranca' && <TabSeguranca />}
-          {abaAtiva === 'importar' && <TabImportarCSV />}
-          {abaAtiva === 'unidades' && <TabUnidades />}
-          {abaAtiva === 'sync' && <TabSincronizacao />}
-          {abaAtiva === 'backup' && <TabBackup />}
+          {renderTab(abaAtiva, user)}
         </div>
       </div>
     )
@@ -923,19 +952,26 @@ function MobileConfiguracoes() {
       </div>
 
       <div className="flex-1 overflow-auto px-[22px] pb-[8px]">
-        <div className="bg-white border border-[#eee9df] rounded-[16px] overflow-hidden mb-[16px]">
-          {abas.map((item, i) => (
-            <button
-              key={item.key}
-              onClick={() => setAbaAtiva(item.key)}
-              className="w-full flex items-center gap-[14px] py-[15px] px-[16px] bg-transparent border-none cursor-pointer"
-              style={i < abas.length - 1 ? { borderBottom: '1px solid #f0ede4' } : {}}
-            >
-              <span className="flex-1 text-left text-[15px] font-bold text-primary-dark">{item.label}</span>
-              <span className="text-[#b8bdb0] font-bold">›</span>
-            </button>
-          ))}
-        </div>
+        {grupos.map(grupo => (
+          <div key={grupo.titulo} className="mb-[20px]">
+            <div className="text-[11.5px] font-extrabold text-text-secondary uppercase tracking-[.08em] mb-[8px] px-[2px]">
+              {grupo.titulo}
+            </div>
+            <div className="bg-white border border-[#eee9df] rounded-[16px] overflow-hidden">
+              {grupo.itens.map((item, i) => (
+                <button
+                  key={item.key}
+                  onClick={() => setAbaAtiva(item.key)}
+                  className="w-full flex items-center py-[15px] px-[16px] bg-transparent border-none cursor-pointer"
+                  style={i < grupo.itens.length - 1 ? { borderBottom: '1px solid #f0ede4' } : {}}
+                >
+                  <span className="flex-1 text-left text-[15px] font-bold text-primary-dark">{item.label}</span>
+                  <span className="text-[#b8bdb0] font-bold">›</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
 
         <div className="bg-chip-bg rounded-[14px] p-[13px_16px] text-[12.5px] text-text-body font-semibold">
           Versão 1.0
@@ -945,75 +981,62 @@ function MobileConfiguracoes() {
   )
 }
 
-const tabMap = { usuarios: 'Usuários', fazenda: 'Dados da fazenda', convite: 'Convite', lotes: 'Lotes & pastos', custos: 'Tipos de custo', receitas: 'Tipos de receita', sanitarios: 'Produtos sanitários', racas: 'Raças', touros: 'Touros / sêmen', seguranca: 'Segurança', importar: 'Importar animais', unidades: 'Unidades', sync: 'Sincronização', backup: 'Backup' }
 
 function DesktopConfiguracoes() {
   const [searchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
-  const [abaAtiva, setAbaAtiva] = useState(tabMap[tabParam] || 'Dados da fazenda')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const grupos = GRUPOS_CONFIG(user.papel === 'admin')
+  const defaultKey = tabParam || 'fazenda'
+  const [abaAtiva, setAbaAtiva] = useState(defaultKey)
 
   useEffect(() => {
-    if (tabParam && tabMap[tabParam]) setAbaAtiva(tabMap[tabParam])
+    if (tabParam) setAbaAtiva(tabParam)
   }, [tabParam])
 
-  const abas = [
-    'Dados da fazenda',
-    ...(user.papel === 'admin' ? ['Convite'] : []),
-    'Lotes & pastos',
-    'Tipos de custo',
-    'Tipos de receita',
-    'Produtos sanitários',
-    'Raças',
-    'Touros / sêmen',
-    'Usuários',
-    'Segurança',
-    'Importar animais',
-    'Unidades',
-    'Sincronização',
-    'Backup',
-  ]
+  const abaLabel = grupos.flatMap(g => g.itens).find(i => i.key === abaAtiva)?.label || ''
 
   return (
     <>
       <div className="flex justify-between items-center px-[26px] py-[20px] border-b border-border bg-header-bg">
         <div>
           <div className="text-[21px] font-extrabold text-primary-dark tracking-[-0.01em]">Configurações</div>
-          <div className="text-[13px] text-text-secondary font-medium">Preferências da fazenda e do sistema</div>
+          <div className="text-[13px] text-text-secondary font-medium">{abaLabel}</div>
         </div>
       </div>
 
       <div className="flex-1 overflow-auto p-[22px_26px] bg-header-bg">
-        <div className="grid grid-cols-[200px_1fr] gap-[20px]">
-          <div className="flex flex-col gap-[3px]">
-            {abas.map(a => (
-              <button
-                key={a}
-                onClick={() => setAbaAtiva(a)}
-                className={`py-[11px] px-[14px] rounded-chip text-[14px] font-semibold text-left cursor-pointer border transition-colors ${
-                  abaAtiva === a
-                    ? 'font-bold text-primary-dark bg-white border-border'
-                    : 'text-text-body bg-transparent border-transparent hover:bg-white'
-                }`}
-              >{a}</button>
+        <div className="grid grid-cols-[210px_1fr] gap-[24px]">
+
+          {/* Sidebar agrupada */}
+          <div className="flex flex-col gap-[20px]">
+            {grupos.map(grupo => (
+              <div key={grupo.titulo}>
+                <div className="text-[11px] font-extrabold text-text-secondary uppercase tracking-[.08em] mb-[6px] px-[10px]">
+                  {grupo.titulo}
+                </div>
+                <div className="flex flex-col gap-[1px]">
+                  {grupo.itens.map(item => (
+                    <button
+                      key={item.key}
+                      onClick={() => setAbaAtiva(item.key)}
+                      className={`py-[10px] px-[12px] rounded-[10px] text-[13.5px] font-semibold text-left cursor-pointer border transition-colors ${
+                        abaAtiva === item.key
+                          ? 'font-bold text-primary-dark bg-white border-border shadow-[0_1px_4px_rgba(0,0,0,0.06)]'
+                          : 'text-text-body bg-transparent border-transparent hover:bg-[rgba(255,255,255,0.6)]'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
+          {/* Conteúdo */}
           <div>
-            {abaAtiva === 'Dados da fazenda' && <TabDadosFazenda user={user} />}
-            {abaAtiva === 'Convite' && <TabConvite user={user} />}
-            {abaAtiva === 'Lotes & pastos' && <TabLotes />}
-            {abaAtiva === 'Tipos de custo' && <TabTiposCusto />}
-            {abaAtiva === 'Tipos de receita' && <TabTiposReceita />}
-            {abaAtiva === 'Produtos sanitários' && <TabProdutosSanitarios />}
-            {abaAtiva === 'Raças' && <TabRacas />}
-            {abaAtiva === 'Touros / sêmen' && <TabTouros />}
-            {abaAtiva === 'Usuários' && <TabUsuarios user={user} />}
-            {abaAtiva === 'Segurança' && <TabSeguranca />}
-            {abaAtiva === 'Importar animais' && <TabImportarCSV />}
-            {abaAtiva === 'Unidades' && <TabUnidades />}
-            {abaAtiva === 'Sincronização' && <TabSincronizacao />}
-            {abaAtiva === 'Backup' && <TabBackup />}
+            {renderTab(abaAtiva, user)}
           </div>
         </div>
       </div>
